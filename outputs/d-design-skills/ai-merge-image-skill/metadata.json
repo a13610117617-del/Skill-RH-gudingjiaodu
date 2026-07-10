@@ -1,0 +1,14 @@
+{
+  "name": "ai-merge-image-skill",
+  "displayName": "\u4ea7\u54c1\u63a7\u5236\u878d\u5408\u4e13\u5bb6-\u56fa\u5b9a\u89d2\u5ea6",
+  "description": "\u4e0a\u4f20\u4e00\u5f20\u4ea7\u54c1\u978b\u56fe\u3001\u4e00\u5f20\u80cc\u666f\u56fe\u548c\u4e00\u5f20\u89d2\u5ea6\u53c2\u8003\u56fe\uff0c\u4e00\u952e\u878d\u5408\u6210\u81ea\u7136\u573a\u666f\u56fe\uff1a\u4ea7\u54c1\u5916\u89c2100%\u9501\u5b9a\uff0c\u80cc\u666f\u548c\u5149\u5f71\u6765\u81ea\u80cc\u666f\u56fe\uff0c\u59ff\u6001\u89d2\u5ea6\u53ea\u6765\u81ea\u89d2\u5ea6\u56fe\u3002",
+  "publicId": "ai-merge-image-skill-local",
+  "category": "ecommerce",
+  "version": "1",
+  "priority": "41",
+  "is_public": "N",
+  "enabled": "Y",
+  "owner_name": "local",
+  "source": "Codex local skill",
+  "updated_at": "2026-06-30T00:00:00.000+00:00"
+}

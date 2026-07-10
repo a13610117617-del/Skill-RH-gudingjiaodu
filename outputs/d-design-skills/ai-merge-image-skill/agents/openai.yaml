@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Merge Image Skill"
+  short_description: "One-click product, background, and angle image fusion."
+  default_prompt: "Use $ai-merge-image-skill to merge my product shoe image, background image, and angle reference image into one realistic scene."

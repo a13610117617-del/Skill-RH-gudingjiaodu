@@ -1,0 +1,76 @@
+{
+  "name": "randian-skill",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run dev:client\"",
+    "dev:client": "vite --host 127.0.0.1 --port 5176 --strictPort",
+    "server": "node server/index.js",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "push:github": "node scripts/push-github.mjs",
+    "preview": "vite preview",
+    "electron:dev": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "@neplex/vectorizer": "^0.1.0",
+    "@rolldown/binding-win32-x64-msvc": "^1.1.2",
+    "concurrently": "^10.0.3",
+    "express": "^5.2.1",
+    "multer": "^2.2.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12"
+  },
+  "productName": "\u71c3\u70b9Skill",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.randian.skill",
+    "productName": "\u71c3\u70b9Skill",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "server/**/*",
+      "electron/**/*",
+      "build/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../outputs/d-design-skills",
+        "to": "outputs/d-design-skills"
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  }
+}

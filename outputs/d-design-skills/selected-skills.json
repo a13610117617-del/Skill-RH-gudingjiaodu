@@ -1,0 +1,16 @@
+﻿{
+    "requestedName":  "产品控制融合专家-固定角度",
+    "publicId":  "ai-merge-image-skill-local",
+    "name":  "ai-merge-image-skill",
+    "displayName":  "产品控制融合专家-固定角度",
+    "category":  "ecommerce",
+    "description":  "上传产品鞋图、背景图和角度参考图，一键融合成自然场景图：产品外观100%锁定，背景和光影来自背景图，姿态角度只来自角度图。",
+    "ownerName":  "local",
+    "sourceDetailUrl":  "",
+    "sourceListUrl":  "",
+    "gmtModified":  "2026-06-29T00:00:00.000+00:00",
+    "version":  1,
+    "contentChars":  12680,
+    "referencesCount":  4,
+    "folder":  "ai-merge-image-skill"
+}
