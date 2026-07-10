@@ -6,7 +6,9 @@ const net = require('node:net')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
-const APP_NAME = '\u71c3\u70b9Skill'
+const APP_NAME = '\u71c3\u70b9skill-\u56fa\u5b9a\u89d2\u5ea6'
+const API_START_PORT = 19788
+const WEB_START_PORT = 16174
 
 function getAppRoot() {
   return app.isPackaged ? app.getAppPath() : path.resolve(__dirname, '..')
@@ -76,7 +78,7 @@ async function startWebServer(apiPort) {
     res.sendFile(path.join(distRoot, 'index.html'))
   })
 
-  const port = await findFreePort(15174)
+  const port = await findFreePort(WEB_START_PORT)
   await new Promise((resolve) => {
     web.listen(port, '127.0.0.1', resolve)
   })
@@ -85,10 +87,11 @@ async function startWebServer(apiPort) {
 
 async function createWindow() {
   app.setName(APP_NAME)
+  app.setPath('userData', path.join(app.getPath('appData'), APP_NAME))
   Menu.setApplicationMenu(null)
   nativeTheme.themeSource = 'dark'
   const iconPath = path.join(getAppRoot(), 'build', 'icon.png')
-  const apiPort = await findFreePort(18788)
+  const apiPort = await findFreePort(API_START_PORT)
   await startApiServer(apiPort)
   const webPort = await startWebServer(apiPort)
 
@@ -189,7 +192,7 @@ async function createWindow() {
       if (document.querySelector('.desktop-titlebar')) return
       const titlebar = document.createElement('div')
       titlebar.className = 'desktop-titlebar'
-      titlebar.innerHTML = '<span class="desktop-titlebar-mark">燃</span><span class="desktop-titlebar-name">燃点Skill</span>'
+      titlebar.innerHTML = '<span class="desktop-titlebar-mark">燃</span><span class="desktop-titlebar-name">燃点skill-固定角度</span>'
       document.body.prepend(titlebar)
     })()
   `)

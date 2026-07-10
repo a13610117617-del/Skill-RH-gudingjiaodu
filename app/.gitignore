@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 data/
+data-fixed-angle/
+._cache_rcedit.exe
 
 # Editor directories and files
 .vscode/*

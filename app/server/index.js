@@ -228,6 +228,34 @@ function buildMergeImageGenerationReferenceUrls(files = [], angleSource = '') {
   ].filter(Boolean)
 }
 
+function buildProductReferenceAssignmentHardInstruction({ productReferenceCount = 0, angleSource = '', productImageStartIndex = 3 } = {}) {
+  if (productReferenceCount <= 1) return ''
+  const image1 = `image ${productImageStartIndex}`
+  const image2 = `image ${productImageStartIndex + 1}`
+  const base = [
+    `MULTI PRODUCT COLORWAY LOCK: ${productReferenceCount} product shoe references are uploaded.`,
+    `Each visible shoe position must preserve its assigned product reference exactly, including shoe color, material, outsole, strap/lace/buckle, stitching, texture, and proportions.`,
+    `If ${image1} and ${image2} show different colors or variants, the final image must show different-colored shoes in the assigned positions.`,
+    'Different product colors are intentional in this workflow. A natural left/right shoe pair may still be different colorways when the uploaded product references differ.',
+    'Any instruction about a natural left-shoe/right-shoe pair controls shoe side geometry only; it must never force the two shoes to become the same color.',
+    'Do not unify shoe colors, do not average colors, do not recolor one product reference to match another, and do not merge multiple product references into one hybrid shoe.',
+  ]
+  if (/angle-01|角度\s*1|手持\+脚穿|手持.*脚穿/i.test(String(angleSource || ''))) {
+    return [
+      ...base,
+      `ANGLE-01 EXACT PRODUCT ASSIGNMENT: ${image1} / product reference 1 controls the single worn shoe on the visible foot/leg in the upper-right area.`,
+      `${image2} / product reference 2 controls the hand-held or hand-supported display shoe in the lower-left foreground.`,
+      'The worn shoe and the hand-supported display shoe must keep their separate assigned product colors when the references differ.',
+      'Final visible check before output: the upper/right worn shoe must visibly match product reference 1 color, and the lower-left hand-supported shoe must visibly match product reference 2 color. If both shoes appear the same color, the result is wrong.',
+      'Never swap these two assignments, never make both shoes the same color, and never turn the hand-supported display shoe into a second worn shoe.',
+    ].join('\n')
+  }
+  return [
+    ...base,
+    'PRODUCT POSITION ASSIGNMENT: product reference 1 controls the first visible shoe position, product reference 2 controls the second visible shoe position, product reference 3 controls the third visible shoe position, continuing in upload order while preserving the selected angle shoe roles.',
+  ].join('\n')
+}
+
 function buildMergeImageLockInstruction(files = [], angleSource = '') {
   if (!files.length) return ''
   const roleMap = new Map()
@@ -4456,6 +4484,14 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
     const productReferenceCount = uploadedFiles.filter((file, index) => mergeImageRole(file, index) === 'product').length
     const productReferenceText = productReferenceCount > 1 ? 'product shoe references' : 'product shoe reference'
     const productReferenceUseText = productReferenceCount > 1 ? 'all product shoe references' : 'the product shoe reference'
+    const productImageStartIndex = hasAngleControlReference
+      ? hasModelReference ? 5 : 4
+      : hasModelReference ? 4 : 3
+    const productReferenceAssignmentHardInstruction = buildProductReferenceAssignmentHardInstruction({
+      productReferenceCount,
+      angleSource,
+      productImageStartIndex,
+    })
     const isSingleFootAngleControl = hasAngleControlReference && (/single-foot|single foot|单脚/i.test(String(angleSource || '')) || /SINGLE-FOOT ANGLE CHANNEL|singleFootCodeCount\s*=\s*footX1/i.test(String(angleLayout || '')))
     const conciseAngleLayout = extractConciseAngleLayout(angleLayout)
     const hardAngleLayoutSummary = hasAngleControlReference ? buildHardAngleLayoutSummary(angleLayout) : ''
@@ -4541,6 +4577,7 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
         : '',
       `ORIENTATION LOCK: keep the composition orientation exactly consistent with ${requestedSize}, aspect ratio ${imageSizeToRatioLabel(requestedSize)}; do not return a vertical image when a horizontal size is selected, and do not return a horizontal image when a vertical size is selected.`,
       conciseRequestInstruction ? `CONCISE USER / ANGLE EXTRA INSTRUCTION:\n${conciseRequestInstruction}` : '',
+      productReferenceAssignmentHardInstruction,
       !hasAngleControlReference ? mergeImageLockInstruction : '',
       hasAngleControlReference
         ? hasModelReference
@@ -5073,6 +5110,6 @@ app.use((error, _req, res, _next) => {
 
 const port = Number(process.env.PORT || 8790)
 await ensureDir(dataRoot)
-app.listen(port, () => {
+app.listen(port, '127.0.0.1', () => {
   console.log(`Skill Runner API listening on http://127.0.0.1:${port}`)
 })

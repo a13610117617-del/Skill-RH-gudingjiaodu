@@ -39,11 +39,11 @@
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
   },
-  "productName": "\u71c3\u70b9Skill",
+  "productName": "\u71c3\u70b9skill-\u56fa\u5b9a\u89d2\u5ea6",
   "main": "electron/main.cjs",
   "build": {
-    "appId": "com.randian.skill",
-    "productName": "\u71c3\u70b9Skill",
+    "appId": "com.randian.skill.fixedangle",
+    "productName": "\u71c3\u70b9skill-\u56fa\u5b9a\u89d2\u5ea6",
     "directories": {
       "output": "release"
     },
@@ -52,8 +52,7 @@
       "server/**/*",
       "electron/**/*",
       "build/**/*",
-      "package.json",
-      "node_modules/**/*"
+      "package.json"
     ],
     "extraResources": [
       {

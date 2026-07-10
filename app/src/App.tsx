@@ -458,8 +458,6 @@ const multiAngleViewCounts = [3, 6, 9, 12]
 const mergeImageSlots: MergeImageSlot[] = [
   { id: 'product', label: '产品鞋图', hint: '可上传多张；不同鞋图会分别生成对应鞋款，只传一张则所有鞋用同款' },
   { id: 'background', label: '背景图', hint: '锁定墙面、地面、空间、光线和阴影方向' },
-  { id: 'angle', label: '角度参考图', hint: '黄=鞋子角度，蓝=腿，红=衣服，黑=背景区域' },
-  { id: 'model', label: '模特参考图', hint: '可选：按蓝/红区域参考腿部和穿搭' },
 ]
 
 const mergeAnglePosePrompts: Record<string, string> = {
@@ -472,6 +470,24 @@ const mergeAngleRoleLocks: Record<string, string> = {
   'angle-01': 'Selected pose prompt role lock: angle-01 must remain exactly one worn shoe on one foot plus exactly one hand-held or hand-supported display shoe. The lower-left foreground shoe is supported by a natural hand/wrist and must not become worn on a second foot. The upper/right shoe is worn on the single visible foot/leg. Do not convert the hand-supported shoe into a worn shoe, do not create two feet wearing both shoes, and do not remove the hand.',
   'angle-02': 'Selected pose prompt role lock: angle-02 is a two-shoe product display only. Do not add feet, legs, hands, or worn-shoe interaction unless the user uploads a different angle reference.',
   'angle-03': 'Selected pose prompt role lock: angle-03 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
+}
+
+function buildMergeProductAssignmentPrompt(productCount: number, angleId: string) {
+  if (productCount <= 1) {
+    return 'Only one product shoe reference is uploaded. All visible shoes in the final image must use this same shoe identity, color, material, sole, toe, heel, straps/laces/buckles, texture, stitching, lining, and proportions.'
+  }
+  const base = `Multiple product shoe references are uploaded. If the uploaded product references show different shoes or different colorways, every visible shoe position must preserve its assigned product reference exactly, including color. Do not unify the colors, do not average colors, do not recolor product reference 2 to match product reference 1, and do not merge different product references into one hybrid shoe. If there are more visible shoe positions than product references, repeat the product references in upload order.`
+  if (angleId === 'angle-01') {
+    return [
+      base,
+      'ANGLE-01 PRODUCT ASSIGNMENT LOCK: product reference 1 controls the single worn shoe on the visible foot/leg in the upper/right area. Product reference 2 controls the hand-held or hand-supported display shoe in the lower-left foreground. If product reference 1 and product reference 2 have different colors, the final image must show two different-colored shoes in those exact roles. Never make both shoes the same color, never swap their assigned roles, and never turn the hand-supported shoe into a second worn shoe.',
+      'A natural left/right shoe pair controls shoe-side geometry only; it must not force matching colors. Different uploaded product colorways must remain visibly different in the final image.',
+    ].join('\n')
+  }
+  return [
+    base,
+    'PRODUCT ASSIGNMENT LOCK: assign product reference 1 to the first visible shoe position, product reference 2 to the second visible shoe position, product reference 3 to the third visible shoe position, following the selected angle shoe count, placement, and worn/handheld/display roles. Product-reference assignment must never change the selected angle role.',
+  ].join('\n')
 }
 
 const mergeAngleAddedPosePrompts: Record<string, string> = {}
@@ -498,7 +514,7 @@ const mergeAngleUploadSlotIds = ['angle'] as const
 type MergeAngleUploadSlotId = (typeof mergeAngleUploadSlotIds)[number]
 const isMergeAngleUploadSlot = (slotId: string): slotId is MergeAngleUploadSlotId =>
   mergeAngleUploadSlotIds.includes(slotId as MergeAngleUploadSlotId)
-const mergeMultiReferenceSlotIds = ['product', 'angle'] as const
+const mergeMultiReferenceSlotIds = ['product'] as const
 type MergeMultiReferenceSlotId = (typeof mergeMultiReferenceSlotIds)[number]
 const isMergeMultiReferenceSlot = (slotId: string): slotId is MergeMultiReferenceSlotId =>
   mergeMultiReferenceSlotIds.includes(slotId as MergeMultiReferenceSlotId)
@@ -571,15 +587,15 @@ function buildUploadedAngleGenerationPrompt(uploadedAngleAnalysis = '') {
 const fallbackSkills: Skill[] = [
   {
     id: 'ai-merge-image-skill-local',
-    displayName: '产品控制融合专家',
+    displayName: '产品控制融合专家-固定角度',
     name: 'ai-merge-image-skill',
-    description: '上传产品鞋图、背景图和角度参考图，一键融合成自然场景图。',
+    description: '上传产品鞋图和背景图，从角度库选择固定角度，一键融合成自然场景图。',
     folder: 'ai-merge-image-skill',
     referencesCount: 4,
     guidance: {
-      summary: '产品鞋图控制产品外观，角度参考图控制构图姿势，背景图控制背景环境。',
-      lead: '上传产品鞋图、背景图和角度参考图，我会按三图角色一键融合成自然场景图。',
-      checklist: ['产品鞋图', '背景图', '角度参考图', '融合要求'],
+      summary: '产品鞋图控制产品外观，角度库控制构图姿势，背景图控制背景环境。',
+      lead: '上传产品鞋图和背景图，并从角度库选择固定角度，我会一键融合成自然场景图。',
+      checklist: ['产品鞋图', '背景图', '角度库', '融合要求'],
       placeholder:
         '例如：把我的产品鞋融合到这张室内背景里，姿态参考上传角度图，只借角度，不复制角度图里的颜色、人体、服装或鞋款设计。',
     },
@@ -920,7 +936,8 @@ function App() {
     skill?.id === 'ai-merge-image-skill-local' ||
     /merge-image/i.test(skill?.id || '') ||
     skill?.displayName === 'AI产品背景融合' ||
-    skill?.displayName === '产品控制融合专家'
+    skill?.displayName === '产品控制融合专家' ||
+    skill?.displayName === '产品控制融合专家-固定角度'
   const isInitialThinking = loading && !analysis && !isMergeImageSkill
   const deliveryOptions = skill?.guidance?.deliveryOptions || []
   const activeDeliveryOptions = analysis?.deliveryOptions?.length ? analysis.deliveryOptions : deliveryOptions
@@ -1542,8 +1559,8 @@ function App() {
       setError('请先上传产品角度图。')
       return
     }
-    if (isMergeImageSkill && mergeImageEntries.length < 3) {
-      setError('请分别上传产品鞋图、背景图和角度参考图。')
+    if (isMergeImageSkill && mergeImageEntries.length < 2) {
+      setError('请上传产品鞋图和背景图，并在角度库选择一个角度。')
       return
     }
 
@@ -1900,12 +1917,12 @@ function App() {
   }
 
   function mergeReferenceSlotLabel(slotId: MergeMultiReferenceSlotId) {
-    return mergeImageSlots.find((slot) => slot.id === slotId)?.label || '角度参考图'
+    return mergeImageSlots.find((slot) => slot.id === slotId)?.label || '产品鞋图'
   }
 
   function mergeReferenceModalHint(slotId: MergeMultiReferenceSlotId) {
     if (slotId === 'product') return '张产品参考图；如果鞋款/颜色不同，生图时一张参考图对应一只鞋。'
-    return '张角度参考图，将共用产品鞋图、背景图和模特参考图分别生成。'
+    return '张参考图。'
   }
 
   function buildMergeImageBrief(baseBrief: string) {
@@ -1918,8 +1935,8 @@ function App() {
       uploadedRoles,
       'Product image only controls the shoe identity and all shoe details.',
       'Background image only controls the room, wall, floor, baseboard, lighting, and shadows.',
-      'Angle reference / angle-library image is a semantic region mask: yellow=shoes, blue=body limbs identified by silhouette as legs/ankles/feet or arms/hands/wrists, red=clothing, black=background. It controls pose, composition, occlusion, and camera angle.',
-      'Model reference only controls actual outfit category/color/fabric, clothing drape, body limbs, skin tone, lower-body proportions, and elegant styling as secondary support for the product shoes. Never copy the model reference shoes, background, wall, floor, props, watermark, or lighting pattern.',
+      'Selected angle-library image is a semantic region mask: yellow=shoes, blue=body limbs identified by silhouette as legs/ankles/feet or arms/hands/wrists, red=clothing, black=background. It controls pose, composition, occlusion, and camera angle.',
+      'No model reference image is uploaded in this fixed-angle workflow. Generate simple natural lower-body limbs/clothing only as required by the selected angle-library reference.',
       'Generate one final realistic lower-body-only composite, not a triptych or explanation. Do not generate the model face, head, portrait, or full upper body. Replace every semantic mask region with realistic content from the assigned reference.',
     ].join('\n')
     return [baseBrief.trim(), optionBrief].filter(Boolean).join('\n\n')
@@ -4642,23 +4659,15 @@ function App() {
     if (!skill) return
     const productFiles = mergeImageFiles.product || []
     const backgroundFile = (mergeImageFiles.background || [])[0]
-    const uploadedAngleItems = [
-      ...(mergeImageFiles.angle || []).map((file, index) => ({
-        file,
-        source: 'standard' as const,
-        label: (mergeImageFiles.angle || []).length > 1 ? `上传角度参考图 ${index + 1}` : '上传角度参考图',
-      })),
-    ].slice(0, mergeAngleBatchLimit)
-    const modelFile = (mergeImageFiles.model || [])[0]
     const selectedLibraryAngles = selectedMergeAngleIds
       .map((id) => mergeAngleLibrary.find((item) => item.id === id))
       .filter((item): item is (typeof mergeAngleLibrary)[number] => Boolean(item))
       .slice(0, mergeAngleBatchLimit)
-    if (productFiles.length === 0 || !backgroundFile || (uploadedAngleItems.length === 0 && selectedLibraryAngles.length === 0)) {
-      setError('请上传产品鞋图、背景图，并上传或选择一个角度参考图。')
+    if (productFiles.length === 0 || !backgroundFile || selectedLibraryAngles.length === 0) {
+      setError('请上传产品鞋图、背景图，并在角度库选择一个角度。')
       return
     }
-    if (uploadedAngleItems.length === 0 && selectedMergeAngleIds.length > mergeAngleBatchLimit) {
+    if (selectedMergeAngleIds.length > mergeAngleBatchLimit) {
       setError(`一次最多选择 ${mergeAngleBatchLimit} 个角度生成。`)
       return
     }
@@ -4680,16 +4689,7 @@ function App() {
       label: string
       url: string
       uploadedFile: File | null
-      uploadedAngleKind?: 'standard'
-    }> = uploadedAngleItems.length > 0
-      ? uploadedAngleItems.map((item, index) => ({
-          id: `uploaded-angle-${index + 1}`,
-          label: item.label,
-          url: '',
-          uploadedFile: item.file,
-          uploadedAngleKind: item.source,
-        }))
-      : selectedLibraryAngles.map((item) => ({ id: item.id, label: item.label, url: item.url, uploadedFile: null }))
+    }> = selectedLibraryAngles.map((item) => ({ id: item.id, label: item.label, url: item.url, uploadedFile: null }))
     setPendingPreviewCards(generationAngles.map((item) => ({ id: item.id, title: `${item.label} 生图中` })))
     try {
       const sharedFiles = [
@@ -4698,7 +4698,6 @@ function App() {
           name: `merge-product-${index + 1}-${file.name}`,
         })))),
         { image: await compressMergeReferenceFile(backgroundFile, 'background'), name: `merge-background-${backgroundFile.name}` },
-        ...(modelFile ? [{ image: await compressMergeReferenceFile(modelFile, 'model'), name: `merge-model-${modelFile.name}` }] : []),
       ]
       const generatedImages: GeneratedImage[] = []
       let lastGenerated: ImageResult | null = null
@@ -4726,8 +4725,8 @@ function App() {
           angleItem.uploadedFile ? '' : mergeAnglePosePrompts[angleItem.id],
           angleItem.uploadedFile ? '' : mergeAngleRoleLocks[angleItem.id],
           angleItem.uploadedFile ? '' : mergeAngleAddedPosePrompts[angleItem.id],
-          productFiles.length > 1 ? `Multiple product shoe references are uploaded. If the uploaded product references show different shoes or different colorways, generate one visible shoe from each product reference: product reference 1 controls one visible shoe position, product reference 2 controls another visible shoe position, product reference 3 controls another visible shoe position, following the visible shoe count, placement, and worn/handheld/display role from the selected angle. Product-reference assignment must never change the angle role: a hand-held or hand-supported display shoe must stay hand-held/hand-supported, a worn shoe must stay worn, and a standalone display shoe must stay standalone. Do not merge different product references into one hybrid shoe. If there are more visible shoe positions than product references, repeat the product references in order. If only one product reference is uploaded, all visible shoes must use that same shoe identity.` : 'Only one product shoe reference is uploaded. All visible shoes in the final image must use this same shoe identity, color, material, sole, toe, heel, straps/laces/buckles, texture, stitching, lining, and proportions.',
-          modelFile ? 'A model reference image is uploaded. Use it only for outfit category/color/fabric, body-limb appearance, skin tone, lower-body proportion, and elegant styling as secondary support for the product shoes. Do not copy model shoes, model background, wall, floor, props, basket, flowers, watermark, or lighting pattern.' : 'No model reference image is uploaded. Generate simple natural body limbs/clothing only as required by the angle reference.',
+          buildMergeProductAssignmentPrompt(productFiles.length, angleItem.id),
+          'No model reference image is uploaded. Generate simple natural body limbs/clothing only as required by the selected angle-library reference.',
           'Lower-body-only framing: never generate the model face, head, portrait, or full upper body. Keep the crop focused on shoes, feet, legs, hands if present in the angle mask, and only the clothing portion required around the lower body.',
           uploadedAngleIsRealPhoto
             ? 'The uploaded real angle photo must dominate pose and camera: shoe count, shoe placement, shoe direction, toe direction, heel direction, shoe angle, body-facing direction, foot/leg/hand/arm pose, camera height, lens perspective, scale relationship, crop, overlap, and occlusion must follow the real angle photo rather than the product photo or model photo. Do not convert it into a color-block mask workflow.'
@@ -6088,7 +6087,7 @@ function App() {
       <section className="workspace" aria-label="Skill Runner">
         <header className="topbar">
           <div>
-            <p className="brand">燃点Skill</p>
+            <p className="brand">燃点skill-固定角度</p>
             <span>local workflow studio</span>
           </div>
           <nav aria-label="Workflow navigation">
@@ -6450,7 +6449,7 @@ function App() {
                           <div className="merge-angle-library-head">
                             <div>
                               <strong>角度库</strong>
-                              <span>可多选角度批量生成；上传多张角度参考图时会共用产品、背景和模特图分别生成。</span>
+                              <span>可多选角度批量生成；每个角度会共用产品鞋图和背景图分别生成。</span>
                             </div>
                             <button
                               type="button"
@@ -6477,7 +6476,7 @@ function App() {
                                         ? current
                                         : [...current, item.id],
                                   )
-                                  setMergeImageFiles((current) => ({ ...current, angle: [] }))
+                                  setMergeImageFiles((current) => ({ ...current, angle: [], model: [] }))
                                 }}
                               >
                                 <img src={item.url} alt={item.label} />
