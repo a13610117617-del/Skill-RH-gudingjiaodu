@@ -464,12 +464,14 @@ const mergeAnglePosePrompts: Record<string, string> = {
   'angle-01': '选定姿势提示：斜俯拍近景构图，一只脚从画面右侧伸入并穿鞋，鞋头朝左上方；另一只鞋由手从下方托住展示，位于前景偏左下。整体是“脚上试穿一只 + 手持展示一只”的双鞋组合，手和脚形成交叉层次，镜头从上方斜向俯视，突出试穿与手持展示的互动关系。',
   'angle-02': '选定姿势提示：高位斜俯拍双鞋展示构图，不出现人物肢体。两只鞋斜向并列摆放，整体从左下延伸到右上，鞋头朝右下方，鞋跟朝左上方。画面呈干净的产品陈列视角，两只鞋有轻微前后错位和透视层次，适合表现一双鞋的整体角度和鞋面结构。',
   'angle-03': '选定姿势提示：单脚侧面试穿近景构图，一条腿从画面上方垂直进入，脚上穿着一只鞋。鞋子横向侧面展示，鞋头朝右，鞋跟朝左，镜头接近侧面平视或轻微俯视。画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
+  'angle-04': '选定姿势提示：单脚侧面试穿近景构图，一条腿从画面上方垂直进入，脚上穿着一只鞋。鞋子横向侧面展示，鞋头朝右，鞋跟朝左，镜头接近侧面平视或轻微俯视。画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
 }
 
 const mergeAngleRoleLocks: Record<string, string> = {
   'angle-01': 'Selected pose prompt role lock: angle-01 must remain exactly one worn shoe on one foot plus exactly one hand-held or hand-supported display shoe. The lower-left foreground shoe is supported by a natural hand/wrist and must not become worn on a second foot. The upper/right shoe is worn on the single visible foot/leg. Do not convert the hand-supported shoe into a worn shoe, do not create two feet wearing both shoes, and do not remove the hand.',
   'angle-02': 'Selected pose prompt role lock: angle-02 is a two-shoe product display only. Do not add feet, legs, hands, or worn-shoe interaction unless the user uploads a different angle reference.',
   'angle-03': 'Selected pose prompt role lock: angle-03 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
+  'angle-04': 'Selected pose prompt role lock: angle-04 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
 }
 
 function buildMergeProductAssignmentPrompt(productCount: number, angleId: string) {
@@ -490,6 +492,12 @@ function buildMergeProductAssignmentPrompt(productCount: number, angleId: string
   ].join('\n')
 }
 
+function selectMergeProductsForAngle<T>(productReferences: T[], angleId: string) {
+  if (productReferences.length > 1 && angleId === 'angle-03') return [productReferences[0]]
+  if (productReferences.length > 1 && angleId === 'angle-04') return [productReferences[1] || productReferences[0]]
+  return productReferences
+}
+
 const mergeAngleAddedPosePrompts: Record<string, string> = {}
 
 const mergeAngleLibrary = [
@@ -506,6 +514,11 @@ const mergeAngleLibrary = [
   {
     id: 'angle-03',
     label: '角度 3｜单脚侧面试穿',
+    url: '/assets/merge-angle-library/angle-03.webp',
+  },
+  {
+    id: 'angle-04',
+    label: '角度 4｜单脚侧面试穿',
     url: '/assets/merge-angle-library/angle-03.webp',
   },
 ]
@@ -4692,16 +4705,19 @@ function App() {
     }> = selectedLibraryAngles.map((item) => ({ id: item.id, label: item.label, url: item.url, uploadedFile: null }))
     setPendingPreviewCards(generationAngles.map((item) => ({ id: item.id, title: `${item.label} 生图中` })))
     try {
-      const sharedFiles = [
-        ...(await Promise.all(productFiles.map(async (file, index) => ({
+      const compressedProductFiles = await Promise.all(productFiles.map(async (file, index) => ({
           image: await compressMergeReferenceFile(file, 'product'),
           name: `merge-product-${index + 1}-${file.name}`,
-        })))),
-        { image: await compressMergeReferenceFile(backgroundFile, 'background'), name: `merge-background-${backgroundFile.name}` },
-      ]
+        })))
+      const compressedBackgroundFile = { image: await compressMergeReferenceFile(backgroundFile, 'background'), name: `merge-background-${backgroundFile.name}` }
       const generatedImages: GeneratedImage[] = []
       let lastGenerated: ImageResult | null = null
       for (const angleItem of generationAngles) {
+        const angleProductFiles = selectMergeProductsForAngle(compressedProductFiles, angleItem.id)
+        const sharedFiles = [
+          ...angleProductFiles,
+          compressedBackgroundFile,
+        ]
         const angleFile = angleItem.uploadedFile || await fileFromAsset(angleItem.url, `${angleItem.id}.png`)
         const cleanedAngleControl = angleItem.uploadedFile
           ? await buildCleanedAngleControl(angleFile)
@@ -4725,7 +4741,7 @@ function App() {
           angleItem.uploadedFile ? '' : mergeAnglePosePrompts[angleItem.id],
           angleItem.uploadedFile ? '' : mergeAngleRoleLocks[angleItem.id],
           angleItem.uploadedFile ? '' : mergeAngleAddedPosePrompts[angleItem.id],
-          buildMergeProductAssignmentPrompt(productFiles.length, angleItem.id),
+          buildMergeProductAssignmentPrompt(angleProductFiles.length, angleItem.id),
           'No model reference image is uploaded. Generate simple natural body limbs/clothing only as required by the selected angle-library reference.',
           'Lower-body-only framing: never generate the model face, head, portrait, or full upper body. Keep the crop focused on shoes, feet, legs, hands if present in the angle mask, and only the clothing portion required around the lower body.',
           uploadedAngleIsRealPhoto
