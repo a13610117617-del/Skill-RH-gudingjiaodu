@@ -6,7 +6,7 @@ const net = require('node:net')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
-const APP_NAME = '\u71c3\u70b9skill-\u56fa\u5b9a\u89d2\u5ea6'
+const APP_NAME = '\u71c3\u70b9skill-\u56fa\u5b9a\u89d2\u5ea62.0'
 const API_START_PORT = 19788
 const WEB_START_PORT = 16174
 
@@ -193,6 +193,14 @@ async function createWindow() {
       const titlebar = document.createElement('div')
       titlebar.className = 'desktop-titlebar'
       titlebar.innerHTML = '<span class="desktop-titlebar-mark">燃</span><span class="desktop-titlebar-name">燃点skill-固定角度</span>'
+      titlebar.textContent = ''
+      const mark = document.createElement('span')
+      mark.className = 'desktop-titlebar-mark'
+      mark.textContent = '\u71c3'
+      const name = document.createElement('span')
+      name.className = 'desktop-titlebar-name'
+      name.textContent = ${JSON.stringify(APP_NAME)}
+      titlebar.append(mark, name)
       document.body.prepend(titlebar)
     })()
   `)
