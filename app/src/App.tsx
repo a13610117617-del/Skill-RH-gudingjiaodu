@@ -463,8 +463,8 @@ const mergeImageSlots: MergeImageSlot[] = [
 const mergeAnglePosePrompts: Record<string, string> = {
   'angle-01': '选定姿势提示：斜俯拍近景构图，一只脚从画面右侧伸入并穿鞋，鞋头朝左上方；另一只鞋由手从下方托住展示，位于前景偏左下。整体是“脚上试穿一只 + 手持展示一只”的双鞋组合，手和脚形成交叉层次，镜头从上方斜向俯视，突出试穿与手持展示的互动关系。',
   'angle-02': '选定姿势提示：高位斜俯拍双鞋展示构图，不出现人物肢体。两只鞋斜向并列摆放，整体从左下延伸到右上，鞋头朝右下方，鞋跟朝左上方。画面呈干净的产品陈列视角，两只鞋有轻微前后错位和透视层次，适合表现一双鞋的整体角度和鞋面结构。',
-  'angle-03': '选定姿势提示：单脚侧面试穿近景构图，一条腿从画面上方垂直进入，脚上穿着一只鞋。鞋子横向侧面展示，鞋头朝右，鞋跟朝左，镜头接近侧面平视或轻微俯视。画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
-  'angle-04': '选定姿势提示：单脚侧面试穿近景构图，一条腿从画面上方垂直进入，脚上穿着一只鞋。鞋子横向侧面展示，鞋头朝右，鞋跟朝左，镜头接近侧面平视或轻微俯视。画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
+  'angle-03': '选定姿势提示：严格复刻角度库参考图的单脚侧面试穿近景构图。腿部从画面上方偏左进入，沿轻微右倾的竖向弧线下落到鞋口，脚踝进入鞋内；鞋子占据画面下半部并落在视觉中心区域，鞋身横向侧面展示，鞋跟在左下，鞋头朝右，鞋底接近水平但带轻微透视。镜头接近侧面平视或轻微俯视，画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
+  'angle-04': '选定姿势提示：严格复刻角度库参考图的单脚侧面试穿近景构图。腿部从画面上方偏左进入，沿轻微右倾的竖向弧线下落到鞋口，脚踝进入鞋内；鞋子占据画面下半部并落在视觉中心区域，鞋身横向侧面展示，鞋跟在左下，鞋头朝右，鞋底接近水平但带轻微透视。镜头接近侧面平视或轻微俯视，画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
 }
 
 const mergeAngleRoleLocks: Record<string, string> = {
@@ -472,6 +472,51 @@ const mergeAngleRoleLocks: Record<string, string> = {
   'angle-02': 'Selected pose prompt role lock: angle-02 is a two-shoe product display only. Do not add feet, legs, hands, or worn-shoe interaction unless the user uploads a different angle reference.',
   'angle-03': 'Selected pose prompt role lock: angle-03 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
   'angle-04': 'Selected pose prompt role lock: angle-04 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
+}
+
+const mergeAnglePrecisionLocks: Record<string, string> = {
+  'angle-03': [
+    'ANGLE-03 PRECISION LAYOUT LOCK: follow the code-generated cleaned angle control and original angle-03 reference as a fixed 2D composition, not just a general pose idea.',
+    'The product shoe must be the visual center: keep the shoe body centered in the middle-lower area of the final frame, with the whole visible shoe occupying the dominant central subject area. Do not push the shoe to the far left, far right, bottom edge, or corner.',
+    'Preserve the angle reference leg entry and bend: one lower leg enters from the upper-left / upper-center area, travels downward with a slight rightward curve, and connects naturally into the shoe opening. Do not make the leg vertical in the exact center, do not rotate it to a front-facing standing pose, and do not add a second leg.',
+    'Preserve the shoe orientation from the reference: side-view horizontal shoe, heel on the left, toe on the right, sole nearly horizontal with subtle perspective, ankle seated inside the opening. Do not flip, mirror, rotate, recrop, or re-center differently from the control layout.',
+    'LEG SKIN CONSISTENCY LOCK: generate exactly one continuous female lower leg with one unified fair natural skin tone. The leg must not contain mismatched skin patches, two different skin colors, color bands, blue/yellow/red mask tint, stocking-like color breaks, duplicated ankles, or another leg with a different complexion.',
+  ].join('\n'),
+  'angle-04': [
+    'ANGLE-04 PRECISION LAYOUT LOCK: follow the code-generated cleaned angle control and original angle-03 reference as a fixed 2D composition, not just a general pose idea.',
+    'The product shoe must be the visual center: keep the shoe body centered in the middle-lower area of the final frame, with the whole visible shoe occupying the dominant central subject area. Do not push the shoe to the far left, far right, bottom edge, or corner.',
+    'Preserve the angle reference leg entry and bend: one lower leg enters from the upper-left / upper-center area, travels downward with a slight rightward curve, and connects naturally into the shoe opening. Do not make the leg vertical in the exact center, do not rotate it to a front-facing standing pose, and do not add a second leg.',
+    'Preserve the shoe orientation from the reference: side-view horizontal shoe, heel on the left, toe on the right, sole nearly horizontal with subtle perspective, ankle seated inside the opening. Do not flip, mirror, rotate, recrop, or re-center differently from the control layout.',
+    'LEG SKIN CONSISTENCY LOCK: generate exactly one continuous female lower leg with one unified fair natural skin tone. The leg must not contain mismatched skin patches, two different skin colors, color bands, blue/yellow/red mask tint, stocking-like color breaks, duplicated ankles, or another leg with a different complexion.',
+  ].join('\n'),
+}
+
+function shouldUseLibraryCoordinateControl(angleId: string) {
+  return angleId === 'angle-03' || angleId === 'angle-04'
+}
+
+const fixedSingleFootLegReferenceUrl = '/assets/merge-angle-library/angle-03-fixed-leg-reference-magenta.png?v=20260713-magenta-leg'
+
+function buildFixedSingleFootReferenceLock(angleId: string) {
+  if (!shouldUseLibraryCoordinateControl(angleId)) return ''
+  const angleLabel = angleId === 'angle-04' ? 'ANGLE-04' : 'ANGLE-03'
+  return [
+    `${angleLabel} FIXED REFERENCE GEOMETRY BY CODE: this lock is derived from the fixed angle-03 reference image and applies only to angle-03 / angle-04.`,
+    'A hidden fixed leg and magenta auxiliary reference is provided for angle-03 / angle-04. Use the leg area only for the model leg anatomy, calf shape, leg skin tone, leg width, ankle size, leg curvature, and natural leg structure. Use the magenta region only as a secondary rough shoe-area hint to help align the foot opening; it is not the primary placement authority. Do not render magenta color, and do not treat the magenta region as shoe appearance, shoe material, shoe color, or shoe design.',
+    'Use a 1:1 canvas coordinate system from X0-Y0 at top-left to X100-Y100 at bottom-right. Keep the leg, crop, scale, and direction locked to these relative coordinates no matter what product shoe image is uploaded.',
+    'Primary shoe placement rule: the original angle-library yellow/S shoe region is the exact and highest authority for final shoe position, size, direction, toe direction, heel position, perspective, scale, occlusion, and crop. The magenta region and all text size-memory rules are only secondary auxiliary hints and must never override, enlarge, lower, recenter, or move the yellow/S region.',
+    'Fixed shoe region from the angle yellow/S area: the single worn shoe must occupy the selected angle yellow/S region exactly, with the final shoe outer boundary fitted inside that yellow/S region. Heel/body side stays at the left-lower side of the yellow/S region, toe/front follows the right-facing yellow/S direction, and the outsole follows the yellow/S perspective. Do not move the shoe to a generic lower-middle product-photo position, do not make it a larger close-up, and do not change the composition scale to satisfy aesthetic centering.',
+    'Fixed leg region: the one visible lower leg enters from the top-left/top-center area around X22-X44 at Y0, travels downward with a slight rightward curve through X34-X52, and inserts into the shoe opening around X40-X54 and Y43-Y58. Keep the ankle seated inside the shoe opening; do not detach, thicken, straighten, mirror, or shift the leg.',
+    'Fixed proportion rule: leg width, ankle size, and leg-to-shoe contact must stay consistent with the hidden fixed-leg reference image. Shoe length, shoe height, shoe direction, shoe placement, shoe center, and crop must follow the angle yellow/S region first; the magenta region only helps confirm the intended shoe zone. The uploaded product shoe reference controls shoe design, color, material, sole, laces, straps, logo, and texture; it must not change the leg pose, leg scale, yellow/S shoe direction, yellow/S shoe placement, shoe center, or crop.',
+    'Approved size memory for angle-03 / angle-04 is soft and subordinate: it may only help keep angle-03 and angle-04 visually consistent after the shoe has already been fitted into the original angle yellow/S region. It must not provide any background, prop, room layout, wall/floor style, color temperature, or scene element. Do not enlarge, shrink, lower, raise, or recenter the shoe to match an old numeric size range. If text-derived size memory conflicts with the angle yellow/S region, ignore the size memory completely and follow the yellow/S region.',
+    'Fixed contact shadow rule for angle-03 / angle-04: the shoe must sit on the uploaded background floor with a soft grounded contact shadow. Keep a slightly deeper shadow directly under the outsole and heel, fading naturally outward along the floor plane. The shadow direction, brightness, softness, and color must follow the current uploaded background lighting only. Do not copy or recreate any non-current-background object, prop, room layout, wall/floor style, text, label, or scene element from any previous output, fixed reference, angle reference, or product photo.',
+    'Angle-03 / angle-04 pair consistency rule: when both angles are generated from two product shoe references, the final shoe outer box, outsole contact line, ankle contact height, leg entry, floor contact shadow size, and camera crop must match across the two images. Only shoe appearance, color, material, details, and product identity may differ.',
+    'Product-photo angle isolation rule: extract only the shoe identity, color, material, pattern, buckle/strap/lace details, sole, heel, toe, stitching, and texture from the uploaded product shoe image. Do not copy the product photo camera angle, product photo perspective, product photo crop, pair layout, floating catalog pose, or white product-photo background into the final angle-03 / angle-04 composition.',
+    'Fixed camera rule: side-view close-up with slight high/near perspective. Do not convert to a front view, top-down view, full-body shot, catalog floating shoe, pair display, or standing pose.',
+    'Uniform skin rule: all visible skin on this one lower leg must be the same fair, translucent, natural skin tone with fine skin texture. Do not use the angle mask blue color as skin, do not create two skin tones, and do not add socks/stockings unless they already exist in the uploaded product shoe and do not cover the leg.',
+    'Background priority rule: the uploaded background image is the only environment source for angle-03 / angle-04. The hidden fixed leg/magenta reference, angle reference, product photo, and previous successful examples must never control the final environment, wall, floor, props, color temperature, shadows, horizon, baseboard, white background, room layout, or scene element.',
+    'Final background stability check for angle-03 / angle-04: after fitting the leg and shoe, reread the current uploaded background directly. Preserve every visible current-background element, its position, scale, crop, perspective, occlusion, color temperature, and lighting. If any current-background element disappears, moves, changes identity, or any element not visible in the current uploaded background appears, the result is wrong.',
+  ].join('\n')
 }
 
 function buildMergeProductAssignmentPrompt(productCount: number, angleId: string) {
@@ -4719,13 +4764,26 @@ function App() {
           compressedBackgroundFile,
         ]
         const angleFile = angleItem.uploadedFile || await fileFromAsset(angleItem.url, `${angleItem.id}.png`)
-        const cleanedAngleControl = angleItem.uploadedFile
+        const useLibraryCoordinateControl = !angleItem.uploadedFile && shouldUseLibraryCoordinateControl(angleItem.id)
+        const fixedLegReferenceFile = useLibraryCoordinateControl
+          ? await fileFromAsset(fixedSingleFootLegReferenceUrl, 'angle-03-fixed-leg-reference.png')
+          : null
+        const fixedLegReferenceUpload = fixedLegReferenceFile
+          ? {
+              image: fixedLegReferenceFile,
+              name: `merge-model-fixed-angle-leg-reference-${angleItem.id}.png`,
+            }
+          : null
+        const cleanedAngleControl = angleItem.uploadedFile || useLibraryCoordinateControl
           ? await buildCleanedAngleControl(angleFile)
           : null
         const uploadedAngleIsRealPhoto = Boolean(angleItem.uploadedFile && cleanedAngleControl && !cleanedAngleControl.file)
+        const fixedSingleFootReferenceLock = buildFixedSingleFootReferenceLock(angleItem.id)
         const angleLayoutBrief = angleItem.uploadedFile
           ? [cleanedAngleControl?.layout].filter(Boolean).join('\n\n')
-          : await describeAngleColorBlocks(angleFile, `${angleItem.label} / ${angleItem.id}`)
+          : useLibraryCoordinateControl && cleanedAngleControl?.layout
+            ? [cleanedAngleControl.layout, fixedSingleFootReferenceLock].filter(Boolean).join('\n\n')
+            : await describeAngleColorBlocks(angleFile, `${angleItem.label} / ${angleItem.id}`)
         const uploadedAngleSmartAnalysis = ''
         const uploadedAnglePrompt = angleItem.uploadedFile
           ? buildUploadedAngleGenerationPrompt([
@@ -4740,9 +4798,13 @@ function App() {
             : `Selected angle-library template: ${angleItem.label} (${angleItem.id}.png). This merge-angle image is the only pose/composition/semantic-mask template for this generation.`,
           angleItem.uploadedFile ? '' : mergeAnglePosePrompts[angleItem.id],
           angleItem.uploadedFile ? '' : mergeAngleRoleLocks[angleItem.id],
+          angleItem.uploadedFile ? '' : mergeAnglePrecisionLocks[angleItem.id],
+          angleItem.uploadedFile ? '' : fixedSingleFootReferenceLock,
           angleItem.uploadedFile ? '' : mergeAngleAddedPosePrompts[angleItem.id],
           buildMergeProductAssignmentPrompt(angleProductFiles.length, angleItem.id),
-          'No model reference image is uploaded. Generate simple natural body limbs/clothing only as required by the selected angle-library reference.',
+          useLibraryCoordinateControl
+            ? 'Fixed leg and magenta auxiliary reference image is provided as a hidden body-geometry reference for angle-03 and angle-04 only. Use the leg area only for model leg anatomy, calf shape, leg skin tone, leg size, ankle size, leg curvature, and natural leg structure. Use the original angle yellow/S region as the exact shoe position, size, angle, direction, and bounding-area authority. Use the magenta region only as a secondary rough shoe-area hint, never as the primary placement source. Do not render magenta color, and do not copy any shoe appearance, product color, white background, props, lighting, shadows, or scene from this hidden reference. The uploaded background image is the only environment source, and the uploaded product shoe image is the only shoe appearance source.'
+            : 'No model reference image is uploaded. Generate simple natural body limbs/clothing only as required by the selected angle-library reference.',
           'Lower-body-only framing: never generate the model face, head, portrait, or full upper body. Keep the crop focused on shoes, feet, legs, hands if present in the angle mask, and only the clothing portion required around the lower body.',
           uploadedAngleIsRealPhoto
             ? 'The uploaded real angle photo must dominate pose and camera: shoe count, shoe placement, shoe direction, toe direction, heel direction, shoe angle, body-facing direction, foot/leg/hand/arm pose, camera height, lens perspective, scale relationship, crop, overlap, and occlusion must follow the real angle photo rather than the product photo or model photo. Do not convert it into a color-block mask workflow.'
@@ -4763,6 +4825,9 @@ function App() {
         sharedFiles.forEach(({ image, name }) => generateForm.append('images', image, name))
         if (cleanedAngleControl?.file) {
           generateForm.append('images', cleanedAngleControl.file, `merge-angle-control-${cleanedAngleControl.file.name}`)
+        }
+        if (fixedLegReferenceUpload) {
+          generateForm.append('images', fixedLegReferenceUpload.image, fixedLegReferenceUpload.name)
         }
         generateForm.append('images', await compressMergeReferenceFile(angleFile, 'angle'), `merge-angle-${angleFile.name}`)
         const generateResponse = await fetch('/api/run/merge-image-generate', {
