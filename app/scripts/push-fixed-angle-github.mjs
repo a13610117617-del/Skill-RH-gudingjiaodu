@@ -24,6 +24,7 @@ const includeFiles = [
   'electron/main.cjs',
   'public/assets/merge-angle-library/angle-01.png',
   'public/assets/merge-angle-library/angle-02.webp',
+  'public/assets/merge-angle-library/angle-03.png',
   'public/assets/merge-angle-library/angle-03.webp',
   'public/assets/merge-angle-library/angle-03-fixed-leg-reference-clean.png',
   'public/assets/merge-angle-library/angle-03-fixed-leg-reference-full.png',

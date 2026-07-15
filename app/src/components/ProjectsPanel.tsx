@@ -231,10 +231,40 @@ function getReferenceLabel(url: string, index: number) {
   return `参考 ${index + 1}`
 }
 
+function shouldShowReferenceInProjectRecord(url: string) {
+  try {
+    const parsed = new URL(url, window.location.origin)
+    const tag = parsed.searchParams.get('mergeRef') || ''
+    return [
+      'angle-mask',
+      'original-angle-reference',
+      'real-photo-angle-reference',
+      'background',
+    ].includes(tag) || /^product-shoe(?:-|$)/i.test(tag)
+  } catch {
+    return true
+  }
+}
+
+function getProjectRecordReferenceLabel(url: string, index: number) {
+  try {
+    const parsed = new URL(url, window.location.origin)
+    const tag = parsed.searchParams.get('mergeRef') || ''
+    const productMatch = tag.match(/^product-shoe(?:-reference-(\d+)|-primary)?$/i)
+    if (productMatch) return tag === 'product-shoe-primary' ? '产品鞋图 1' : `产品鞋图 ${productMatch[1] || index + 1}`
+    if (tag === 'angle-mask' || tag === 'original-angle-reference' || tag === 'real-photo-angle-reference') return '角度图'
+    if (tag === 'background') return '背景图'
+    if (/^product-shoe(?:-|$)/i.test(tag)) return tag === 'product-shoe-primary' ? '产品鞋图 1' : `产品鞋图 ${index + 1}`
+  } catch {
+    // Fall through to the generic label.
+  }
+  return getReferenceLabel(url, index)
+}
+
 function getReferenceLightboxItems(referenceImageUrls: string[]) {
-  return referenceImageUrls.map((referenceUrl, referenceIndex) => ({
+  return referenceImageUrls.filter(shouldShowReferenceInProjectRecord).map((referenceUrl, referenceIndex) => ({
     imageUrl: referenceUrl,
-    title: getReferenceLabel(referenceUrl, referenceIndex),
+    title: getProjectRecordReferenceLabel(referenceUrl, referenceIndex),
   }))
 }
 
@@ -959,9 +989,9 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                             {image.size ? ` · ${image.size}` : ''}
                           </span>
                         </figcaption>
-                        {image.referenceImageUrls && image.referenceImageUrls.length > 0 && (
+                        {getReferenceLightboxItems(image.referenceImageUrls || []).length > 0 && (
                           <div className="project-reference-strip" aria-label="生成参考图">
-                            {getReferenceLightboxItems(image.referenceImageUrls).map((referenceItem, referenceIndex, referenceItems) => (
+                            {getReferenceLightboxItems(image.referenceImageUrls || []).map((referenceItem, referenceIndex, referenceItems) => (
                               <figure key={`${image.imageUrl}-ref-${referenceItem.imageUrl}-${referenceIndex}`}>
                                 <button
                                   type="button"
