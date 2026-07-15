@@ -163,6 +163,7 @@ function isMultiAngleProductViewFile(file = {}) {
 
 function mergeImageRole(file = {}, index = -1) {
   const name = String(file.originalName || file.fileName || '')
+  if (/merge-angle03-base-output-for-angle04/i.test(name)) return 'baseOutput'
   if (/merge-product-/i.test(name)) return 'product'
   if (/merge-background-/i.test(name)) return 'background'
   if (/merge-angle-control-/i.test(name)) return 'angleControl'
@@ -183,6 +184,7 @@ function describeMergeImageUploadedFiles(files = []) {
     angleControl: 'cleaned angle control reference: simplified hard layout mask for shoe count, shoe placement, pose, and region boundaries',
     angle: 'angle / semantic mask reference: yellow=shoes, blue=body limbs identified by silhouette as legs/ankles/feet or arms/hands/wrists, red=clothing, black=background; controls pose/composition/camera',
     model: 'model reference: only source for outfit, body limbs, skin tone, lower-body proportions, and styling; do not copy model shoes, model background, wall, floor, props, watermark, light pattern, or scene',
+    baseOutput: 'angle-03 generated base output for angle-04: strongest visual continuity reference; keep background, leg, camera, shoe placement, shoe scale, shoe direction, lighting, and shadows unchanged; replace only the shoe identity',
     extra: 'extra reference image',
   }
   return files.map((file, index) => {
@@ -218,6 +220,7 @@ function buildMergeImageGenerationReferenceUrls(files = [], angleSource = '') {
   const modelUrl = firstUrl('model')
   const productUrls = (map.get('product') || []).map((file) => file.url).filter(Boolean)
   const backgroundUrl = firstUrl('background')
+  const baseOutputUrls = (map.get('baseOutput') || []).map((file) => file.url).filter(Boolean)
   const angleReferences = angleControlUrl
     ? [
         tagReferenceUrl(angleControlUrl, 'cleaned-angle-control-mask'),
@@ -236,7 +239,21 @@ function buildMergeImageGenerationReferenceUrls(files = [], angleSource = '') {
         : 'model-outfit-body-limbs',
     ),
     ...productUrls.map((url, index) => tagReferenceUrl(url, index === 0 ? 'product-shoe-primary' : `product-shoe-reference-${index + 1}`)),
+    ...baseOutputUrls.map((url) => tagReferenceUrl(url, 'angle-03-base-output-for-angle-04')),
   ].filter(Boolean)
+}
+
+function buildAngle04FromAngle03BaseOutputInstruction({ hasBaseOutputReference = false, angleSource = '', productImageStartIndex = 3 } = {}) {
+  if (!hasBaseOutputReference || !/angle-04|瑙掑害\s*4/i.test(String(angleSource || ''))) return ''
+  return [
+    '[ANGLE-04 FROM ANGLE-03 BASE OUTPUT MODE - HIGHEST PRIORITY]',
+    'A generated angle-03 result from this same batch is provided as the final additional reference image tagged angle-03-base-output-for-angle-04. Treat that generated angle-03 image as the locked visual base for angle-04.',
+    'Keep the angle-03 base output unchanged for background environment, all visible background elements, crop, camera viewpoint, leg anatomy, leg position, leg size, leg skin tone, ankle contact, shoe outer bounding box, shoe center, heel position, toe endpoint, outsole baseline, shoe direction, perspective, contact shadow footprint, shadow softness, shadow direction, highlight direction, exposure, and overall light intensity.',
+    `Replace only the worn shoe identity with the uploaded product shoe reference at image ${productImageStartIndex}. The product reference controls shoe appearance only: color, material, logo, stitching, straps/laces/buckles, sole, toe, heel, texture, and product details.`,
+    'Do not regenerate a new background. Do not reinterpret the angle mask. Do not change the leg. Do not change shoe size, shoe position, shoe direction, perspective, crop, shadow footprint, or lighting. Do not average the two product shoes. The final angle-04 image should look like the angle-03 output with only the shoe replaced by product reference 2.',
+    'If product reference 2 is a sandal, mule, open-top shoe, strappy shoe, Mary Jane, or any shoe with exposed instep/foot-dorsum openings, keep the angle-03 leg/ankle continuity and generate matching natural foot skin inside every opening. The exposed instep skin must match the leg skin tone, lighting, and texture exactly. Do not leave hollow cutouts, background-colored holes, black gaps, transparent-looking voids, or missing-foot areas.',
+    'When using the angle-03 output as the base, do not preserve any small dark dots, freckles, speckles, stains, eyelet-like marks, or hole-like artifacts on the exposed instep skin. The shoe replacement may preserve holes only on the shoe straps, buckles, leather panels, or shoe upper material. Skin must remain clean, even, and unperforated.',
+  ].join('\n')
 }
 
 function buildProductReferenceAssignmentHardInstruction({ productReferenceCount = 0, angleSource = '', productImageStartIndex = 3 } = {}) {
@@ -608,6 +625,8 @@ function buildFixedSingleFootLibraryFinalLock(angleSource = '') {
     '[MUST] GROUNDED CONTACT SHADOW LOCK: the shoe must sit on the uploaded background floor with a soft realistic contact shadow. Keep a slightly deeper shadow directly under the outsole and heel, fading naturally outward along the floor plane. Shadow direction, brightness, softness, and color must follow the current uploaded background lighting only.',
     '[MUST NOT] Do not copy or recreate any non-current-background object, prop, room layout, wall/floor style, text, label, or scene element from any previous output, fixed reference, angle reference, product photo, or text-derived size-memory example. The approved 2026-07-13 examples are used only as text-derived shoe-size and contact-shadow footprint memory; the current uploaded background remains the only environment source.',
     '[MUST] The entire visible leg must have one unified fair natural skin tone with translucent realistic skin texture. The thigh/calf/ankle/foot skin must be the same complexion from top to shoe opening. Shadows may change brightness only, not hue or ethnicity. Do not generate mismatched skin patches, two skin tones, blue/yellow/red mask tint, color bands, stocking-like breaks, socks, leggings, bruised/dark patches, or a second different-complexion limb.',
+    '[MUST] OPEN SHOE INSTEP SKIN FILL: if the uploaded product shoe is a sandal, mule, open-top shoe, strappy shoe, Mary Jane, or any shoe that exposes the instep/foot dorsum through vamp openings, cutouts, straps, buckle gaps, or top openings, automatically generate the visible foot skin inside those openings. The exposed instep must be anatomically continuous with the ankle and lower leg, use the exact same fair natural skin tone, follow the same lighting, and show fine natural skin texture. The shoe straps and buckles sit on top of the skin. Do not leave background-colored holes, black voids, transparent-looking gaps, mask-color gaps, missing-foot areas, or hollow cutouts where the foot skin should appear.',
+    '[MUST] CLEAN EXPOSED INSTEP SKIN: exposed instep/foot skin must be clean, smooth, evenly toned, and unperforated. Shoe holes, strap holes, buckle holes, punched eyelets, decorative perforations, black circular holes, and dotted product details are allowed only on the shoe straps, buckles, leather panels, or shoe upper material. Never transfer these holes or dots onto the skin. Do not generate freckles, moles, dirty speckles, pore-like black dots, dotted stains, eyelet-like marks, or hole-like artifacts on the exposed foot skin.',
     '[MUST] Before final output, check: if the shoe does not match the angle yellow/S region position, size, direction, toe/heel axis, perspective, and visual center, if the leg does not enter from the upper-left/top-center and connect to the shoe opening, or if the leg skin contains two different tones, the result is wrong and must be regenerated internally.',
     '[MUST] FINAL BACKGROUND STABILITY CHECK: after fitting the leg and shoe, reread the current uploaded background directly. Preserve every visible current-background element, its position, scale, crop, perspective, occlusion, color temperature, and lighting. If any current-background element disappears, moves, changes identity, or any element not visible in the current uploaded background appears, the result is wrong and must be regenerated internally.',
   ].join('\n')
@@ -4537,12 +4556,18 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
     const mergeImageLockInstruction = buildMergeImageLockInstruction(uploadedFiles, angleSource)
     const hasModelReference = requiredRoles.has('model')
     const hasAngleControlReference = requiredRoles.has('angleControl')
+    const hasBaseOutputReference = requiredRoles.has('baseOutput')
     const productReferenceCount = uploadedFiles.filter((file, index) => mergeImageRole(file, index) === 'product').length
     const productReferenceText = productReferenceCount > 1 ? 'product shoe references' : 'product shoe reference'
     const productReferenceUseText = productReferenceCount > 1 ? 'all product shoe references' : 'the product shoe reference'
     const productImageStartIndex = hasAngleControlReference
       ? hasModelReference ? 5 : 4
       : hasModelReference ? 4 : 3
+    const angle04FromAngle03BaseOutputInstruction = buildAngle04FromAngle03BaseOutputInstruction({
+      hasBaseOutputReference,
+      angleSource,
+      productImageStartIndex,
+    })
     const productReferenceAssignmentHardInstruction = buildProductReferenceAssignmentHardInstruction({
       productReferenceCount,
       angleSource,
@@ -4600,6 +4625,8 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
             'The cleaned angle control image and original angle reference are coordinate/layout guides only. Their blue/yellow colors must never appear in the final image; blue leg metadata becomes one unified fair natural skin leg, and yellow shoe metadata becomes the uploaded product shoe.',
             'If the uploaded product shoe has a different silhouette, fit it into the fixed side-view shoe region without changing the shoe center, toe direction, heel side, outsole direction, leg entry, ankle position, or crop.',
             'Final matched-pair check for angle-03 and angle-04: compare shoe length, shoe height, shoe center, heel position, toe endpoint, outsole baseline, ankle opening height, leg entry point, contact shadow footprint, shadow softness, shadow direction, highlight direction, exposure, and camera crop only after both shoes are fitted into their original angle yellow/S regions. Product references may change shoe identity and details only. Never move, enlarge, lower, crop, recenter, relight, brighten, darken, or change shadow scale away from the angle yellow/S region and uploaded background lighting to satisfy product-photo appearance.',
+            'Final open-shoe foot check for angle-03 and angle-04: if the product shoe exposes the instep through sandal/open-top/strap/cutout/buckle openings, the visible foot dorsum must be filled with natural skin continuous from the same ankle and leg. It must match the leg skin tone, lighting, and fine skin texture. Any background-colored hole, black void, transparent-looking gap, missing instep, or hollow opening where skin should be visible is a failed result.',
+            'Final clean-skin check for angle-03 and angle-04: shoe eyelets, punched strap holes, buckle holes, black dots, circular perforations, and dotted product details may appear only on shoe material. If any of these dot/hole details appear on exposed instep skin, foot skin, ankle skin, or leg skin, the result is wrong. The skin surface must look clean and evenly toned, not spotted or perforated.',
           ].join('\n')
       : hasAngleControlReference
       ? isSingleFootAngleControl
@@ -4636,6 +4663,7 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
           ].join('\n')
       : ''
     const finalPrompt = [
+      angle04FromAngle03BaseOutputInstruction,
       fixedSingleFootLibraryFinalLock,
       hardAngleLayoutSummary,
       maskColorBanInstruction,
@@ -4675,6 +4703,7 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
           ? `No requirement analysis or plan is needed. Directly generate one final composite image. Use the uploaded references as hard references. Match image 1 angle-mask for composition, pose, blue-region limb identity, yellow-region shoe count/placement/angle/scale, and camera. Use only image 2 background for environment. Use image 3 model reference only for outfit, body-limb styling, skin tone, and lower-body proportions, excluding background, shoes, props, and watermark. Use ${productReferenceUseText} from image 4 and later for shoes.`
           : `No requirement analysis or plan is needed. Directly generate one final composite image. Use the uploaded references as hard references. Match image 1 angle-mask for composition, pose, blue-region limb identity, yellow-region shoe count/placement/angle/scale, and camera. Use only image 2 background for environment. Use ${productReferenceUseText} from image 3 and later for shoes.`,
       finalHardLayoutLock,
+      angle04FromAngle03BaseOutputInstruction,
     ].filter(Boolean).join('\n')
     timing.mark('prompt built', { finalPromptChars: finalPrompt.length })
 

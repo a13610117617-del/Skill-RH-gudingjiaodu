@@ -481,6 +481,8 @@ const mergeAnglePrecisionLocks: Record<string, string> = {
     'Preserve the angle reference leg entry and bend: one lower leg enters from the upper-left / upper-center area, travels downward with a slight rightward curve, and connects naturally into the shoe opening. Do not make the leg vertical in the exact center, do not rotate it to a front-facing standing pose, and do not add a second leg.',
     'Preserve the shoe orientation from the reference: side-view horizontal shoe, heel on the left, toe on the right, sole nearly horizontal with subtle perspective, ankle seated inside the opening. Do not flip, mirror, rotate, recrop, or re-center differently from the control layout.',
     'LEG SKIN CONSISTENCY LOCK: generate exactly one continuous female lower leg with one unified fair natural skin tone. The leg must not contain mismatched skin patches, two different skin colors, color bands, blue/yellow/red mask tint, stocking-like color breaks, duplicated ankles, or another leg with a different complexion.',
+    'OPEN SHOE INSTEP SKIN FILL LOCK: if the uploaded product shoe is a sandal, mule, open-top shoe, strappy shoe, Mary Jane, or any shoe that exposes the instep/foot dorsum through openings, automatically generate the visible foot skin inside every opening. The exposed instep must be continuous with the ankle and leg, use the same fair natural skin tone, show subtle natural skin texture, and fill the opening naturally behind straps/buckles. Do not leave hollow cutouts, background-colored holes, black gaps, empty voids, mask-color gaps, or transparent-looking areas where foot skin should be visible.',
+    'CLEAN INSTEP SKIN LOCK: exposed instep/foot skin must be clean, smooth, even, and continuous. Shoe holes, strap holes, buckle holes, punched eyelets, black dots, circular holes, and perforation details are allowed only on shoe straps, buckles, leather panels, or shoe upper material. They must never appear on the skin. Do not add freckles, moles, dirty speckles, pore-like black dots, dotted stains, or eyelet-like marks on the exposed foot skin.',
   ].join('\n'),
   'angle-04': [
     'ANGLE-04 PRECISION LAYOUT LOCK: follow the code-generated cleaned angle control and original angle-03 reference as a fixed 2D composition, not just a general pose idea.',
@@ -488,6 +490,8 @@ const mergeAnglePrecisionLocks: Record<string, string> = {
     'Preserve the angle reference leg entry and bend: one lower leg enters from the upper-left / upper-center area, travels downward with a slight rightward curve, and connects naturally into the shoe opening. Do not make the leg vertical in the exact center, do not rotate it to a front-facing standing pose, and do not add a second leg.',
     'Preserve the shoe orientation from the reference: side-view horizontal shoe, heel on the left, toe on the right, sole nearly horizontal with subtle perspective, ankle seated inside the opening. Do not flip, mirror, rotate, recrop, or re-center differently from the control layout.',
     'LEG SKIN CONSISTENCY LOCK: generate exactly one continuous female lower leg with one unified fair natural skin tone. The leg must not contain mismatched skin patches, two different skin colors, color bands, blue/yellow/red mask tint, stocking-like color breaks, duplicated ankles, or another leg with a different complexion.',
+    'OPEN SHOE INSTEP SKIN FILL LOCK: if the uploaded product shoe is a sandal, mule, open-top shoe, strappy shoe, Mary Jane, or any shoe that exposes the instep/foot dorsum through openings, automatically generate the visible foot skin inside every opening. The exposed instep must be continuous with the ankle and leg, use the same fair natural skin tone, show subtle natural skin texture, and fill the opening naturally behind straps/buckles. Do not leave hollow cutouts, background-colored holes, black gaps, empty voids, mask-color gaps, or transparent-looking areas where foot skin should be visible.',
+    'CLEAN INSTEP SKIN LOCK: exposed instep/foot skin must be clean, smooth, even, and continuous. Shoe holes, strap holes, buckle holes, punched eyelets, black dots, circular holes, and perforation details are allowed only on shoe straps, buckles, leather panels, or shoe upper material. They must never appear on the skin. Do not add freckles, moles, dirty speckles, pore-like black dots, dotted stains, or eyelet-like marks on the exposed foot skin.',
   ].join('\n'),
 }
 
@@ -514,6 +518,8 @@ function buildFixedSingleFootReferenceLock(angleId: string) {
     'Product-photo angle isolation rule: extract only the shoe identity, color, material, pattern, buckle/strap/lace details, sole, heel, toe, stitching, and texture from the uploaded product shoe image. Do not copy the product photo camera angle, product photo perspective, product photo crop, pair layout, floating catalog pose, or white product-photo background into the final angle-03 / angle-04 composition.',
     'Fixed camera rule: side-view close-up with slight high/near perspective. Do not convert to a front view, top-down view, full-body shot, catalog floating shoe, pair display, or standing pose.',
     'Uniform skin rule: all visible skin on this one lower leg must be the same fair, translucent, natural skin tone with fine skin texture. Do not use the angle mask blue color as skin, do not create two skin tones, and do not add socks/stockings unless they already exist in the uploaded product shoe and do not cover the leg.',
+    'Open shoe exposed-foot rule for angle-03 / angle-04: when the uploaded product shoe has open vamp areas, straps, cutouts, sandal gaps, Mary-Jane openings, mule openings, or any visible top-of-foot exposure, fill those openings with a realistic instep/foot dorsum connected to the same leg. The instep skin must match the leg skin tone exactly, remain evenly colored, include fine natural skin texture, and sit naturally under straps and around buckles. Openings must never show background, black holes, empty transparent gaps, mask colors, or missing-foot voids.',
+    'Clean exposed-foot rule for angle-03 / angle-04: the exposed instep skin must stay clean and evenly toned. Shoe perforations, strap holes, buckle holes, punched eyelets, decorative dots, and leather-hole details belong only on the shoe material. Never transfer shoe holes or dotted product details onto skin; never render freckles, moles, black dots, dirty speckles, pore-like dark marks, or eyelet-like holes on the foot skin.',
     'Background priority rule: the uploaded background image is the only environment source for angle-03 / angle-04. Preserve the uploaded background exactly as it is, including only the environment elements already visible in that image, their position, scale, crop, perspective, occlusion, color temperature, lighting, and shadows. Do not create any new background structure, edge line, room feature, prop, texture, or pattern that is not already visible in the uploaded background.',
     'Final background stability check for angle-03 / angle-04: after fitting the leg and shoe, reread the current uploaded background directly. Preserve every visible current-background element, its position, scale, crop, perspective, occlusion, color temperature, and lighting. If any current-background element disappears, moves, changes identity, or any element not visible in the current uploaded background appears, the result is wrong. Only product, body parts, and contact shadows may be blended into the existing uploaded background light.',
   ].join('\n')
@@ -2011,6 +2017,13 @@ function App() {
   async function fileFromAsset(url: string, fileName: string) {
     const response = await fetch(url)
     if (!response.ok) throw new Error('读取角度库图片失败。')
+    const blob = await response.blob()
+    return new File([blob], fileName, { type: blob.type || 'image/png' })
+  }
+
+  async function fileFromGeneratedImageUrl(url: string, fileName: string) {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error('读取角度3生成图失败，无法继续生成角度4。')
     const blob = await response.blob()
     return new File([blob], fileName, { type: blob.type || 'image/png' })
   }
@@ -4747,7 +4760,13 @@ function App() {
       label: string
       url: string
       uploadedFile: File | null
-    }> = selectedLibraryAngles.map((item) => ({ id: item.id, label: item.label, url: item.url, uploadedFile: null }))
+    }> = selectedLibraryAngles
+      .map((item) => ({ id: item.id, label: item.label, url: item.url, uploadedFile: null }))
+      .sort((a, b) => {
+        if (a.id === 'angle-03' && b.id === 'angle-04') return -1
+        if (a.id === 'angle-04' && b.id === 'angle-03') return 1
+        return 0
+      })
     setPendingPreviewCards(generationAngles.map((item) => ({ id: item.id, title: `${item.label} 生图中` })))
     try {
       const compressedProductFiles = await Promise.all(productFiles.map(async (file, index) => ({
@@ -4757,12 +4776,19 @@ function App() {
       const compressedBackgroundFile = { image: await compressMergeReferenceFile(backgroundFile, 'background'), name: `merge-background-${backgroundFile.name}` }
       const generatedImages: GeneratedImage[] = []
       let lastGenerated: ImageResult | null = null
+      let angle03BaseOutputForAngle04: File | null = null
+      const shouldUseAngle03AsAngle04Base = productFiles.length > 1
+        && generationAngles.some((item) => item.id === 'angle-03')
+        && generationAngles.some((item) => item.id === 'angle-04')
       for (const angleItem of generationAngles) {
         const angleProductFiles = selectMergeProductsForAngle(compressedProductFiles, angleItem.id)
         const sharedFiles = [
           ...angleProductFiles,
           compressedBackgroundFile,
         ]
+        const useAngle03BaseOutputForAngle04 = shouldUseAngle03AsAngle04Base
+          && angleItem.id === 'angle-04'
+          && Boolean(angle03BaseOutputForAngle04)
         const angleFile = angleItem.uploadedFile || await fileFromAsset(angleItem.url, `${angleItem.id}.png`)
         const useLibraryCoordinateControl = !angleItem.uploadedFile && shouldUseLibraryCoordinateControl(angleItem.id)
         const fixedLegReferenceFile = useLibraryCoordinateControl
@@ -4801,6 +4827,9 @@ function App() {
           angleItem.uploadedFile ? '' : mergeAnglePrecisionLocks[angleItem.id],
           angleItem.uploadedFile ? '' : fixedSingleFootReferenceLock,
           angleItem.uploadedFile ? '' : mergeAngleAddedPosePrompts[angleItem.id],
+          useAngle03BaseOutputForAngle04
+            ? 'ANGLE-04 FROM ANGLE-03 BASE OUTPUT MODE: This angle-04 generation receives the finished angle-03 image from the same batch as a base visual reference. Keep the generated angle-03 background, camera crop, leg anatomy, leg position, skin tone, shoe position, shoe size, shoe direction, perspective, contact shadow, highlight direction, exposure, and overall lighting exactly consistent. Replace only the worn shoe identity with product shoe reference 2. Product shoe reference 2 controls only shoe appearance, color, material, logo, stitching, straps/laces/buckles, sole, toe, heel, and texture. Do not repaint the background, do not change the leg, do not change shoe scale, and do not move or rotate the shoe away from the angle-03 base output.'
+            : '',
           buildMergeProductAssignmentPrompt(angleProductFiles.length, angleItem.id),
           useLibraryCoordinateControl
             ? 'Fixed leg and magenta auxiliary reference image is provided as a hidden body-geometry reference for angle-03 and angle-04 only. Use the leg area only for model leg anatomy, calf shape, leg skin tone, leg size, ankle size, leg curvature, and natural leg structure. Use the original angle yellow/S region as the exact shoe position, size, angle, direction, and bounding-area authority. Use the magenta region only as a secondary rough shoe-area hint, never as the primary placement source. Do not render magenta color, and do not copy any shoe appearance, product color, white background, props, lighting, shadows, or scene from this hidden reference. The uploaded background image is the only environment source, and the uploaded product shoe image is the only shoe appearance source.'
@@ -4829,6 +4858,9 @@ function App() {
         if (fixedLegReferenceUpload) {
           generateForm.append('images', fixedLegReferenceUpload.image, fixedLegReferenceUpload.name)
         }
+        if (useAngle03BaseOutputForAngle04 && angle03BaseOutputForAngle04) {
+          generateForm.append('images', angle03BaseOutputForAngle04, 'merge-angle03-base-output-for-angle04.png')
+        }
         generateForm.append('images', await compressMergeReferenceFile(angleFile, 'angle'), `merge-angle-${angleFile.name}`)
         const generateResponse = await fetch('/api/run/merge-image-generate', {
           method: 'POST',
@@ -4848,6 +4880,9 @@ function App() {
         })
         setImageResults([...generatedImages])
         setPendingPreviewCards(generationAngles.slice(generatedImages.length).map((item) => ({ id: item.id, title: `${item.label} 生图中` })))
+        if (shouldUseAngle03AsAngle04Base && angleItem.id === 'angle-03') {
+          angle03BaseOutputForAngle04 = await fileFromGeneratedImageUrl(generated.imageUrl, 'merge-angle03-base-output-for-angle04.png')
+        }
       }
       if (lastGenerated) setImageResult(lastGenerated)
       setPendingPreviewCards([])
