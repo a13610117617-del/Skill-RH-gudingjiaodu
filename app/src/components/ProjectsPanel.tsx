@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 
 type ProjectImage = {
   imageUrl: string
@@ -36,8 +36,10 @@ type ProjectsPanelProps = {
   onDownload: (imageUrl: string, title: string) => Promise<void>
   onDownloadMany: (items: Array<{ imageUrl: string; title: string }>) => Promise<void>
   onDeleteProjects: (projectIds: string[]) => Promise<void>
+  onDeleteImages: (items: Array<{ projectId: string; imageUrl: string }>) => Promise<void>
   onRefresh: () => Promise<void>
   onReuseImageSettings?: (project: ProjectItem, image: ProjectImage) => void
+  onReuseProjectReferences?: (project: ProjectItem, image: ProjectImage) => Promise<void> | void
   onToggleFavorite?: (projectId: string, imageUrl: string, favorite: boolean) => Promise<void>
   onError: (message: string) => void
 }
@@ -47,9 +49,11 @@ type ProjectDateField = 'start' | 'end'
 
 type DeleteConfirmState = {
   projectIds: string[]
+  imageItems?: Array<{ projectId: string; imageUrl: string }>
   title: string
   message: string
   multi: boolean
+  mode?: 'projects' | 'images'
 }
 
 type ImageTone = 'light' | 'dark'
@@ -76,6 +80,16 @@ function TrashIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  )
+}
+
+function ClearSelectionIcon() {
+  return (
+    <svg className="project-action-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none">
+      <path d="M4.3 4.3 11.7 11.7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M11.7 4.3 4.3 11.7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M2.8 8a5.2 5.2 0 1 0 10.4 0 5.2 5.2 0 0 0-10.4 0Z" stroke="currentColor" strokeWidth="1.35" />
     </svg>
   )
 }
@@ -246,6 +260,20 @@ function shouldShowReferenceInProjectRecord(url: string) {
   }
 }
 
+function hasReusableProjectReferences(referenceImageUrls: string[] = []) {
+  return referenceImageUrls.some((url) => {
+    try {
+      const parsed = new URL(url, window.location.origin)
+      const tag = (parsed.searchParams.get('mergeRef') || '').toLowerCase()
+      return tag === 'background'
+        || tag === 'model-outfit-body-limbs'
+        || /^product-shoe(?:-|$)/i.test(tag)
+    } catch {
+      return false
+    }
+  })
+}
+
 function getProjectRecordReferenceLabel(url: string, index: number) {
   try {
     const parsed = new URL(url, window.location.origin)
@@ -273,12 +301,10 @@ function getDisplayPrompt(image: ProjectImage) {
 }
 
 export function ProjectsPanel(props: ProjectsPanelProps) {
-  const { open, loading, projects, onClose, onOpenLightbox, onDownload, onDownloadMany, onDeleteProjects, onRefresh, onReuseImageSettings, onToggleFavorite, onError } = props
+  const { open, loading, projects, onClose, onOpenLightbox, onDownload, onDownloadMany, onDeleteProjects, onDeleteImages, onRefresh, onReuseImageSettings, onReuseProjectReferences, onToggleFavorite, onError } = props
   const [selectionMode, setSelectionMode] = useState(false)
-  const [deleteMode, setDeleteMode] = useState(false)
   const [batchOpen, setBatchOpen] = useState(false)
   const [selectedUrls, setSelectedUrls] = useState<string[]>([])
-  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -299,6 +325,9 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const searchRef = useRef<HTMLDivElement | null>(null)
   const filterRef = useRef<HTMLDivElement | null>(null)
+  const dragSelectActiveRef = useRef(false)
+  const suppressSelectionClickRef = useRef(false)
+  const lastPointerPositionRef = useRef({ x: 0, y: 0 })
   const skillOptions = useMemo(
     () => Array.from(new Set(projects.map((project) => project.skillDisplayName).filter(Boolean))).sort(),
     [projects],
@@ -376,6 +405,10 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     () => allImages.filter(({ image }) => selectedUrls.includes(image.imageUrl)),
     [allImages, selectedUrls],
   )
+  const selectedImageDeleteItems = useMemo(
+    () => selectedItems.map(({ image, project }) => ({ projectId: project.id, imageUrl: image.imageUrl })),
+    [selectedItems],
+  )
   const calendarDays = useMemo(() => getCalendarDays(calendarMonth), [calendarMonth])
 
   useEffect(() => {
@@ -406,11 +439,99 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [filtersOpen])
 
+  useEffect(() => {
+    if (!selectionMode) return
+
+    function stopDragSelect() {
+      dragSelectActiveRef.current = false
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      if (!dragSelectActiveRef.current) return
+      lastPointerPositionRef.current = { x: event.clientX, y: event.clientY }
+      selectImageAtViewportPoint(event.clientX, event.clientY)
+    }
+
+    function handleWheel() {
+      if (!dragSelectActiveRef.current) return
+      window.requestAnimationFrame(() => {
+        const point = lastPointerPositionRef.current
+        selectImageAtViewportPoint(point.x, point.y)
+      })
+    }
+
+    document.addEventListener('pointerup', stopDragSelect)
+    document.addEventListener('pointercancel', stopDragSelect)
+    document.addEventListener('pointermove', handlePointerMove)
+    document.addEventListener('wheel', handleWheel, { passive: true })
+    return () => {
+      dragSelectActiveRef.current = false
+      document.removeEventListener('pointerup', stopDragSelect)
+      document.removeEventListener('pointercancel', stopDragSelect)
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('wheel', handleWheel)
+    }
+  }, [selectionMode])
+
   if (!open) return null
 
   function toggleSelection(imageUrl: string) {
     setSelectedUrls((current) =>
       current.includes(imageUrl) ? current.filter((item) => item !== imageUrl) : [...current, imageUrl],
+    )
+  }
+
+  function addSelection(imageUrl: string) {
+    setSelectedUrls((current) => current.includes(imageUrl) ? current : [...current, imageUrl])
+  }
+
+  function selectImageAtViewportPoint(clientX: number, clientY: number) {
+    const target = document.elementFromPoint(clientX, clientY)
+    const imageNode = target instanceof Element ? target.closest<HTMLElement>('[data-project-image-url]') : null
+    const imageUrl = imageNode?.dataset.projectImageUrl || ''
+    if (imageUrl) addSelection(imageUrl)
+  }
+
+  function startDragSelect(event: ReactPointerEvent, imageUrl: string) {
+    if (!selectionMode || event.button !== 0) return
+    const target = event.target
+    if (
+      target instanceof Element
+      && target.closest('.project-select-toggle, .project-image-star, .project-reference-preview, .project-prompt-expand')
+    ) {
+      return
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    dragSelectActiveRef.current = true
+    suppressSelectionClickRef.current = true
+    lastPointerPositionRef.current = { x: event.clientX, y: event.clientY }
+    addSelection(imageUrl)
+  }
+
+  function handleSelectionImageClick(event: ReactPointerEvent | ReactMouseEvent, imageUrl: string) {
+    if (suppressSelectionClickRef.current) {
+      suppressSelectionClickRef.current = false
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+    toggleSelection(imageUrl)
+  }
+
+  function handleProjectImageClick(event: ReactMouseEvent, project: ProjectItem, image: ProjectImage) {
+    if (selectionMode) {
+      handleSelectionImageClick(event, image.imageUrl)
+      return
+    }
+    onOpenLightbox(
+      image.imageUrl,
+      image.title || project.skillDisplayName,
+      project.images.map((item) => ({
+        imageUrl: item.imageUrl,
+        title: item.title || project.skillDisplayName,
+        svgUrl: item.svgUrl,
+      })),
     )
   }
 
@@ -440,8 +561,6 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
   }
 
   function startSelection() {
-    setDeleteMode(false)
-    setSelectedProjectIds([])
     setSelectionMode(true)
     setSelectedUrls([])
   }
@@ -451,35 +570,18 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     setSelectedUrls([])
   }
 
-  function startDeleteMode() {
-    setSelectionMode(false)
+  function clearSelectedImages() {
     setSelectedUrls([])
-    setDeleteMode(true)
-    setSelectedProjectIds([])
   }
 
-  function cancelDeleteMode() {
-    setDeleteMode(false)
-    setSelectedProjectIds([])
+  function startBatchOperation() {
+    setBatchOpen(true)
+    startSelection()
   }
 
   function cancelBatchOperation() {
     setBatchOpen(false)
     cancelSelection()
-    cancelDeleteMode()
-  }
-
-  function toggleProjectSelection(projectId: string) {
-    setSelectedProjectIds((current) =>
-      current.includes(projectId) ? current.filter((item) => item !== projectId) : [...current, projectId],
-    )
-  }
-
-  function handleProjectCardClick(event: ReactMouseEvent<HTMLElement>, projectId: string) {
-    if (!deleteMode) return
-    const target = event.target
-    if (target instanceof Element && target.closest('button, a, input, textarea, select')) return
-    toggleProjectSelection(projectId)
   }
 
   function scrollProjectsToTop() {
@@ -534,25 +636,36 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       title: '删除生成记录',
       message: `确定删除「${project.skillDisplayName}」这条生成记录吗？`,
       multi: false,
+      mode: 'projects',
     })
   }
 
-  function requestDeleteSelectedProjects() {
-    if (selectedProjectIds.length === 0) return
+  function requestDeleteSelectedImages() {
+    if (selectedImageDeleteItems.length === 0) return
     setDeleteConfirm({
-      projectIds: selectedProjectIds,
-      title: '删除多条记录',
-      message: `确定删除选中的 ${selectedProjectIds.length} 条生成记录吗？`,
+      projectIds: [],
+      imageItems: selectedImageDeleteItems,
+      title: '批量删除图片',
+      message: `确定删除选中的 ${selectedImageDeleteItems.length} 张生成图片吗？`,
       multi: true,
+      mode: 'images',
     })
   }
 
   async function confirmDeleteProjects() {
-    if (!deleteConfirm || deleteConfirm.projectIds.length === 0) return
+    if (!deleteConfirm) return
+    const isImageDelete = deleteConfirm.mode === 'images'
+    const deleteImageItems = deleteConfirm.imageItems || []
+    if (isImageDelete && deleteImageItems.length === 0) return
+    if (!isImageDelete && deleteConfirm.projectIds.length === 0) return
     setDeletingProjects(true)
     try {
-      await onDeleteProjects(deleteConfirm.projectIds)
-      setSelectedProjectIds((current) => current.filter((item) => !deleteConfirm.projectIds.includes(item)))
+      if (isImageDelete) {
+        await onDeleteImages(deleteImageItems)
+        setSelectedUrls((current) => current.filter((item) => !deleteImageItems.some((image) => image.imageUrl === item)))
+      } else {
+        await onDeleteProjects(deleteConfirm.projectIds)
+      }
       if (deleteConfirm.multi) cancelBatchOperation()
       setDeleteConfirm(null)
     } catch (error) {
@@ -562,9 +675,9 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
     }
   }
 
-  async function deleteSelectedProjects() {
-    if (selectedProjectIds.length === 0) return
-    requestDeleteSelectedProjects()
+  async function deleteSelectedImages() {
+    if (selectedImageDeleteItems.length === 0) return
+    requestDeleteSelectedImages()
   }
 
   async function downloadSelected() {
@@ -827,40 +940,45 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
               </div>
               <div className="project-download-toolbar">
                 {!batchOpen ? (
-                  <button type="button" className="project-batch-toggle" onClick={() => setBatchOpen(true)}>
+                  <button type="button" className="project-batch-toggle" onClick={startBatchOperation}>
                     <span aria-hidden="true">☷</span>
                     批量操作
                   </button>
                 ) : (
                   <div className="project-batch-actions">
                     <span className="project-download-count">
-                      {deleteMode ? `已选择 ${selectedProjectIds.length} 条记录` : `已选择 ${selectedItems.length} 张`}
+                      {`已选择 ${selectedItems.length} 张`}
                     </span>
                     <button
                       type="button"
                       className="project-download-action danger"
-                      disabled={deleteMode ? selectedProjectIds.length === 0 || loading : loading}
-                      onClick={deleteMode ? deleteSelectedProjects : startDeleteMode}
+                      disabled={selectedItems.length === 0 || loading}
+                      onClick={deleteSelectedImages}
                     >
                       <TrashIcon />
-                      删除
+                      批量删除
+                    </button>
+                    <button
+                      type="button"
+                      className="project-download-action clear"
+                      disabled={selectedItems.length === 0}
+                      onClick={clearSelectedImages}
+                    >
+                      <ClearSelectionIcon />
+                      一键取消
                     </button>
                     <button
                       type="button"
                       className="project-download-action primary"
-                      disabled={selectionMode && selectedItems.length === 0}
+                      disabled={selectedItems.length === 0}
                       onClick={() => {
-                        if (!selectionMode) {
-                          startSelection()
-                          return
-                        }
                         downloadSelected().catch((error) =>
                           onError(error instanceof Error ? error.message : '下载失败。'),
                         )
                       }}
                     >
                       <DownloadIcon />
-                      下载
+                      批量下载
                     </button>
                     <button type="button" className="project-batch-cancel" onClick={cancelBatchOperation}>
                       取消选择
@@ -876,49 +994,33 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
               <article
                 className={[
                   'project-card',
-                  deleteMode ? 'project-card-selectable' : '',
-                  selectedProjectIds.includes(project.id) ? 'project-record-selected' : '',
                 ].filter(Boolean).join(' ')}
                 key={project.id}
-                onClick={(event) => handleProjectCardClick(event, project.id)}
               >
                 <div className="project-card-head">
-                  {deleteMode && (
-                    <button
-                      type="button"
-                      className={`project-record-select ${selectedProjectIds.includes(project.id) ? 'active' : ''}`}
-                      onClick={() => toggleProjectSelection(project.id)}
-                    >
-                      {selectedProjectIds.includes(project.id) ? '已选' : '选择'}
-                    </button>
-                  )}
                   <div>
                     <strong>{project.skillDisplayName}</strong>
                     <span>{project.updatedAt || project.createdAt || project.id}</span>
                   </div>
                   <div className="project-card-actions">
                     <em>{project.images.length} 张图</em>
-                    {!deleteMode && (
-                      <>
-                        <button
-                          type="button"
-                          className="project-download-one"
-                          disabled={project.images.length === 0}
-                          onClick={() => {
-                            downloadProject(project).catch((error) =>
-                              onError(error instanceof Error ? error.message : '下载失败。'),
-                            )
-                          }}
-                        >
-                          <DownloadIcon />
-                          一键下载
-                        </button>
-                        <button type="button" className="project-delete-one" onClick={() => requestDeleteProject(project)}>
-                          <TrashIcon />
-                          删除
-                        </button>
-                      </>
-                    )}
+                    <button
+                      type="button"
+                      className="project-download-one"
+                      disabled={project.images.length === 0}
+                      onClick={() => {
+                        downloadProject(project).catch((error) =>
+                          onError(error instanceof Error ? error.message : '下载失败。'),
+                        )
+                      }}
+                    >
+                      <DownloadIcon />
+                      一键下载
+                    </button>
+                    <button type="button" className="project-delete-one" onClick={() => requestDeleteProject(project)}>
+                      <TrashIcon />
+                      删除
+                    </button>
                   </div>
                 </div>
                 <p>{project.brief}</p>
@@ -927,7 +1029,10 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                     {project.images.map((image) => (
                       <figure
                         key={image.imageUrl}
+                        data-project-image-url={image.imageUrl}
+                        onPointerDown={(event) => startDragSelect(event, image.imageUrl)}
                         className={[
+                          selectionMode ? 'project-generated-card-select-target' : '',
                           selectedUrls.includes(image.imageUrl) ? 'project-image-selected' : '',
                           image.favorite ? 'project-image-favorite' : '',
                         ].filter(Boolean).join(' ')}
@@ -954,31 +1059,23 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                           <button
                             type="button"
                             className={`project-select-toggle ${selectedUrls.includes(image.imageUrl) ? 'active' : ''}`}
+                            aria-label={selectedUrls.includes(image.imageUrl) ? '取消选择图片' : '选择图片'}
                             onClick={() => toggleSelection(image.imageUrl)}
                           >
-                            {selectedUrls.includes(image.imageUrl) ? '已选' : '选择'}
+                            <span aria-hidden="true" />
                           </button>
                         )}
                         <button
                           type="button"
-                          onClick={() =>
-                            selectionMode
-                              ? toggleSelection(image.imageUrl)
-                              : onOpenLightbox(
-                                  image.imageUrl,
-                                  image.title || project.skillDisplayName,
-                                  project.images.map((item) => ({
-                                    imageUrl: item.imageUrl,
-                                    title: item.title || project.skillDisplayName,
-                                    svgUrl: item.svgUrl,
-                                  })),
-                                )
-                          }
+                          className={selectionMode ? 'project-image-drag-select-target' : ''}
+                          onClick={(event) => handleProjectImageClick(event, project, image)}
                         >
                           <img
                             src={image.imageUrl}
                             alt={image.title || project.skillDisplayName}
                             crossOrigin="anonymous"
+                            loading="lazy"
+                            decoding="async"
                             onLoad={(event) => updateImageTone(image.imageUrl, event.currentTarget)}
                           />
                         </button>
@@ -999,7 +1096,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                                   aria-label={`放大查看${referenceItem.title}`}
                                   onClick={() => onOpenLightbox(referenceItem.imageUrl, referenceItem.title, referenceItems)}
                                 >
-                                  <img src={referenceItem.imageUrl} alt={referenceItem.title} />
+                                  <img src={referenceItem.imageUrl} alt={referenceItem.title} loading="lazy" decoding="async" />
                                 </button>
                                 <figcaption>{referenceItem.title}</figcaption>
                               </figure>
@@ -1028,6 +1125,20 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                         )}
                         {!selectionMode && (
                           <div className="project-image-actions">
+                            {onReuseProjectReferences && hasReusableProjectReferences(image.referenceImageUrls || []) && (
+                              <button
+                                className="project-image-reference-reuse"
+                                type="button"
+                                onClick={() => {
+                                  Promise.resolve(onReuseProjectReferences(project, image)).catch((error) =>
+                                    onError(error instanceof Error ? error.message : '复用参考图失败。'),
+                                  )
+                                }}
+                              >
+                                <ReuseIcon />
+                                复用参考图
+                              </button>
+                            )}
                             {onReuseImageSettings && (
                               <button
                                 className="project-image-reuse"
