@@ -469,9 +469,13 @@ const mergeAngleModelSlot: MergeImageSlot = {
   hint: '仅角度5/6使用；参考模特穿搭、服装颜色、材质和下半身造型',
 }
 
+const angle02YellowDistanceLockChinese = '角度2黄色区域距离锁定：两只鞋必须严格按照参考图两块黄色区域的距离和重叠关系生成。左下/前方外侧鞋目标区域约为左13.6%、上30.5%、宽60.5%、高54.8%，视觉中心约X41.3%、Y60.7%；右上/后方内侧鞋目标区域约为左37.5%、上7.0%、宽57.5%、高51.3%，视觉中心约X64.3%、Y35.3%。右上鞋中心相对左下鞋中心必须约向右23.0%、向上25.5%，两只鞋的外接区域在X方向应重叠约36.5%、Y方向应重叠约27.8%，形成紧凑的斜向并列，不要把两只鞋拉远、分散到画面两端、缩小其中一只或重新居中。'
+
+const angle02YellowDistanceLockEnglish = 'ANGLE-02 YELLOW-REGION DISTANCE LOCK: keep the two shoes exactly in the measured yellow-region spacing from the angle-02 reference. The lower-left/front OUTER-SIDE shoe target area is about left 13.6%, top 30.5%, width 60.5%, height 54.8%, center X41.3% / Y60.7%. The upper-right/back INNER-SIDE shoe target area is about left 37.5%, top 7.0%, width 57.5%, height 51.3%, center X64.3% / Y35.3%. The upper-right shoe center must be about 23.0% canvas width to the right and 25.5% canvas height above the lower-left shoe center. Their bounding areas must overlap about 36.5% of canvas width and 27.8% of canvas height, creating a tight staggered pair instead of two separated islands. Do not pull the shoes apart, do not move either shoe toward opposite corners, do not shrink either shoe, and do not recenter the pair by aesthetic judgment.'
+
 const mergeAnglePosePrompts: Record<string, string> = {
   'angle-01': '选定姿势提示：斜俯拍近景构图，一只脚从画面右侧伸入并穿鞋，鞋头朝左上方；另一只鞋由手从下方托住展示，位于前景偏左下。整体是“脚上试穿一只 + 手持展示一只”的双鞋组合，手和脚形成交叉层次，镜头从上方斜向俯视，突出试穿与手持展示的互动关系。腿部和手部皮肤必须白皙、清透、自然，肤色均匀一致，有细腻真实皮肤纹理；不要偏黄、偏黑、暗沉、脏灰或色块感。脚穿鞋连接的是裸露腿部，不穿裤子，不穿袜裤、打底裤、长裤、牛仔裤或运动裤，只保留自然裸腿/脚踝。两只鞋都是同等重要的产品主体，画面占比、鞋身可见长度、鞋身高度和视觉权重要接近；脚上穿的鞋不能变成远处背景板、陪衬小鞋或虚化背景元素，手持鞋也不能明显大过脚穿鞋。',
-  'angle-02': '选定姿势提示：高位斜俯拍双鞋展示构图，不出现人物肢体。两只鞋斜向并列摆放，整体从左下延伸到右上，鞋头朝右下方，鞋跟朝左上方。画面呈干净的产品陈列视角，两只鞋有轻微前后错位和透视层次，适合表现一双鞋的整体角度和鞋面结构。',
+  'angle-02': '选定姿势提示：高位斜俯拍双鞋展示构图，不出现人物肢体。两只鞋斜向并列摆放，整体从左下延伸到右上，鞋头朝右下方，鞋跟朝左上方。画面呈干净的产品陈列视角，两只鞋有轻微前后错位和透视层次，适合表现一双鞋的整体角度和鞋面结构。角度2参考图蓝色文字标注：左下/前方这只鞋是“外侧”，右上/后方这只鞋是“内侧”。当上传两张产品鞋图时，第1张产品鞋图必须生成在外侧鞋位置，第2张产品鞋图必须生成在内侧鞋位置；若只上传一张产品鞋图，则外侧和内侧都使用同一张产品图。' + angle02YellowDistanceLockChinese,
   'angle-03': '选定姿势提示：严格复刻角度库参考图的单脚侧面运动鞋试穿近景构图。腿部从画面上方偏左进入，沿右下方向轻微弯曲下落，脚踝插入鞋口；鞋子占据画面中下部的大面积视觉中心，鞋跟在左侧偏下，鞋头朝右，厚底沿画面下方横向延展，鞋身为完整侧面展示。镜头接近侧面平视或轻微低角度近景，画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
   'angle-04': '选定姿势提示：严格复刻角度库参考图的单脚侧面运动鞋试穿近景构图。腿部从画面上方偏左进入，沿右下方向轻微弯曲下落，脚踝插入鞋口；鞋子占据画面中下部的大面积视觉中心，鞋跟在左侧偏下，鞋头朝右，厚底沿画面下方横向延展，鞋身为完整侧面展示。镜头接近侧面平视或轻微低角度近景，画面只强调一只脚穿鞋的试穿动作，不出现第二只脚、手或额外展示鞋。',
   'angle-05': '选定姿势提示：下半身近景构图，画面只展示模特局部腿部、脚部和一只手，不出现脸部、头部或完整上半身。上传的背景图必须作为最终画面的唯一背景来源，背景里的地面、墙面、空间、道具、前景物、裁切、透视、光线方向、色温和阴影都要按照上传背景图生成；不要复制模特参考图、角度参考图或产品鞋图里的背景，也不要新增上传背景图里没有的环境元素。模特模拟下蹲姿势，但画面只需要展示出一只腿，不要生成第二条完整腿、双腿并排或完整下半身。一只脚自然踩在画面左下方地面上，腿部从画面左上方垂直向下延伸，脚尖朝画面右侧，鞋身以侧面角度展示。另一只手从画面上方偏中间位置伸入，手臂斜向下延伸，手部动作参考“手指向下钩住鞋子”的拿法：食指和中指自然弯曲向下，钩住鞋口内侧、后跟提拉处或鞋帮上沿，拇指在外侧辅助固定，手掌在鞋口上方形成真实受力，让鞋被自然提起悬空展示。不要只用指尖捏住一点点，不要生成夹不住鞋的轻飘动作，抓握要稳定自然。手持鞋位于画面右侧偏中上区域，鞋头朝画面右下方，鞋跟朝画面左上方，呈轻微俯视角度。整体形成“一只脚穿着展示，另一只手拿着展示”的双鞋组合，画面必须出现两只产品鞋：左下穿着鞋和右上手持鞋。若上传两张产品鞋图，左下穿着鞋使用第1张产品鞋图，右上手持鞋使用第2张产品鞋图，两只鞋要保留各自的颜色、材质、鞋底、鞋面、鞋带/扣件、纹理和比例，不要统一成同一双鞋、不要混合平均、不要把第二张鞋图改成第一张；若只上传一张产品鞋图，则两只鞋都使用同一张产品鞋图。穿着的鞋靠近画面下方，手持的鞋悬浮在画面右侧。角度5黄色区域边距锁定：穿着鞋必须严格落在左下黄色区域，对应画面边距约为左9.4%、右31.5%、上49.2%、下15.0%，鞋子视觉中心约在X37.9%、Y69.4%；手持鞋必须严格落在右上黄色区域，对应画面边距约为左42.4%、右15.0%、上16.4%、下41.2%，鞋子视觉中心约在X64.8%、Y39.1%。两只鞋之间的相对距离必须严格按参考图两个黄色区域的紧凑关系生成：手持鞋中心相对穿着鞋中心向右约26.9%、向上约30.3%，但两只鞋的外接区域在画面X方向有明显重叠，不是左右分开的两块区域；最终画面两只鞋之间不能出现宽大的空白走廊或大面积背景间隔。手持鞋要靠近穿着鞋的右上方，形成紧凑的对角展示关系，视觉间隔只能是参考图里很窄的斜向缝隙。不要把手持鞋推到更远的右上角，不要把穿着鞋推到更远的左下角；手、手臂、衣服、背景道具、空地或构图审美都不能把两只鞋拉开。生成前后都要检查两个鞋子的间隔，若两只鞋之间的空白明显变大、两只鞋像分散在画面两端，则结果错误；不要自行拉远、放大间隔、缩小、上移、下移或重新居中。摄影级画面要求：生成结果必须像专业商业鞋履摄影拍摄，曝光准确，画面明亮干净通透，白场清爽，高光自然，产品边缘清晰，鞋面材质、鞋底、缝线、扣件和皮革纹理要清楚，色彩准确且有高级广告修图质感；阴影只能是柔和自然的接触阴影和形体阴影，不能压暗整张画面。不要发灰、发暗、低曝光、脏灰色调、雾蒙蒙、低对比、去饱和、手机随拍感或灰色滤镜感。模特服装只在左侧和上方局部出现，整体为下半身/手部局部裁切。',
@@ -480,7 +484,7 @@ const mergeAnglePosePrompts: Record<string, string> = {
 
 const mergeAngleRoleLocks: Record<string, string> = {
   'angle-01': 'Selected pose prompt role lock: angle-01 must remain exactly one worn shoe on one foot plus exactly one hand-held or hand-supported display shoe. The lower-left foreground shoe is supported by a natural hand/wrist and must not become worn on a second foot. The upper/right shoe is worn on the single visible bare foot/leg. Do not convert the hand-supported shoe into a worn shoe, do not create two feet wearing both shoes, and do not remove the hand. Angle-01 skin lock: the visible leg, ankle, foot skin, hand, wrist, and fingers must be fair/white, clean, translucent natural skin with even tone and fine realistic skin texture. Do not make skin yellowish, dark, tanned, gray, dirty, muddy, or mask-tinted. The worn-shoe leg must be bare skin with no pants, no long trousers, no jeans, no sports pants, no leggings, no tights, and no socks covering the leg/ankle. Both visible shoes are equal product heroes: keep their visible shoe-body area, length, height, sharpness, and visual importance similar. The upper/right worn shoe must not look like a small distant background board or secondary prop. Angle-01 spacing lock: the two visible shoes must keep the same distance as the current angle-01 reference image, with center delta about X22.0% / Y18.0% and nearest yellow-to-yellow boundary gap about 4.94% of canvas width / 3.70% of canvas height.',
-  'angle-02': 'Selected pose prompt role lock: angle-02 is a two-shoe product display only. Do not add feet, legs, hands, or worn-shoe interaction unless the user uploads a different angle reference.',
+  'angle-02': 'Selected pose prompt role lock: angle-02 is a two-shoe product display only. Do not add feet, legs, hands, or worn-shoe interaction unless the user uploads a different angle reference. Angle-02 inner/outer assignment: the lower-left/front display shoe is the OUTER-SIDE shoe, and the upper-right/back display shoe is the INNER-SIDE shoe, matching the blue Chinese labels in the angle reference. When two product references are uploaded, product reference 1 must appear on the OUTER-SIDE lower-left/front shoe, and product reference 2 must appear on the INNER-SIDE upper-right/back shoe. ' + angle02YellowDistanceLockEnglish,
   'angle-03': 'Selected pose prompt role lock: angle-03 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
   'angle-04': 'Selected pose prompt role lock: angle-04 is exactly one worn shoe on one visible foot/leg. Do not add a second shoe, a hand-held shoe, or another foot.',
   'angle-05': 'Selected pose prompt role lock: angle-05 must show exactly two visible product shoes: one shoe worn on the single visible foot in the lower-left position, and one shoe held by the hand in the upper-right position. If two product shoe references are uploaded, product reference 1 controls the worn lower-left shoe and product reference 2 controls the hand-held upper-right shoe. If only one product shoe reference is uploaded, use the same product identity for both visible shoes. Do not duplicate product reference 1 onto both shoes when product reference 2 is different, do not average the two products, and do not change the two-shoe angle-05 layout.',
@@ -591,10 +595,12 @@ function buildMergeProductAssignmentPrompt(productCount: number, angleId: string
   if (angleId === 'angle-02') {
     return [
       base,
-      'ANGLE-02 TWO PRODUCT DISPLAY LOCK: angle-02 shows exactly two standalone display shoes with no hands, feet, or legs. When two product shoe references are uploaded, the first visible display shoe must use product reference 1, and the second visible display shoe must use product reference 2.',
-      'The two shoes may form a natural left/right display pair for geometry, but product colors and product identities must remain assigned separately. If product reference 1 and product reference 2 have different colors, the final angle-02 image must show two different-colored display shoes.',
+      'ANGLE-02 TWO PRODUCT DISPLAY LOCK: angle-02 shows exactly two standalone display shoes with no hands, feet, or legs. The lower-left/front shoe is the OUTER-SIDE shoe, and the upper-right/back shoe is the INNER-SIDE shoe, matching the blue Chinese labels in the angle reference.',
+      'When two product shoe references are uploaded, product reference 1 must control the OUTER-SIDE lower-left/front shoe, and product reference 2 must control the INNER-SIDE upper-right/back shoe.',
+      angle02YellowDistanceLockEnglish,
+      'The two shoes may form a natural left/right display pair for geometry, but product colors and product identities must remain assigned separately. If product reference 1 and product reference 2 have different colors, the final angle-02 image must show product reference 1 color on the outer-side shoe and product reference 2 color on the inner-side shoe.',
       'Do not duplicate product reference 1 onto both shoes. Do not recolor product reference 2 to match product reference 1. Do not average the two uploaded shoes into one shared colorway or hybrid product.',
-      'Final visible check: if two uploaded product references are different but both angle-02 shoes appear as the same color or same product variant, the result is wrong.',
+      'Final visible check: if two uploaded product references are different but both angle-02 shoes appear as the same color or if product reference 2 does not appear on the inner-side upper-right/back shoe, the result is wrong.',
     ].join('\n')
   }
   if (angleId === 'angle-05') {
@@ -5079,6 +5085,64 @@ function App() {
     return new File([blob], 'merge-angle01-position-board.png', { type: 'image/png' })
   }
 
+  async function buildAngle02ShoePositionBoard(productReferences: Array<{ image: File; name: string }>) {
+    if (productReferences.length === 0) return null
+    const canvas = document.createElement('canvas')
+    canvas.width = 620
+    canvas.height = 652
+    const context = canvas.getContext('2d')
+    if (!context) return null
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    const targetBoxes = [
+      { left: 0.1356, top: 0.305, width: 0.6045, height: 0.5478 },
+      { left: 0.3751, top: 0.0698, width: 0.5751, height: 0.5134 },
+    ]
+    context.lineWidth = 4
+    context.strokeStyle = '#202020'
+    context.fillStyle = 'rgba(32,32,32,0.04)'
+    targetBoxes.forEach((box) => {
+      const x = box.left * canvas.width
+      const y = box.top * canvas.height
+      const width = box.width * canvas.width
+      const height = box.height * canvas.height
+      context.fillRect(x, y, width, height)
+      context.strokeRect(x, y, width, height)
+      const centerX = x + width / 2
+      const centerY = y + height / 2
+      context.beginPath()
+      context.arc(centerX, centerY, 7, 0, Math.PI * 2)
+      context.fillStyle = '#202020'
+      context.fill()
+      context.beginPath()
+      context.moveTo(centerX - 16, centerY)
+      context.lineTo(centerX + 16, centerY)
+      context.moveTo(centerX, centerY - 16)
+      context.lineTo(centerX, centerY + 16)
+      context.stroke()
+      context.fillStyle = 'rgba(32,32,32,0.04)'
+    })
+    const lowerCenter = {
+      x: (0.1356 + 0.6045 / 2) * canvas.width,
+      y: (0.305 + 0.5478 / 2) * canvas.height,
+    }
+    const upperCenter = {
+      x: (0.3751 + 0.5751 / 2) * canvas.width,
+      y: (0.0698 + 0.5134 / 2) * canvas.height,
+    }
+    context.setLineDash([10, 8])
+    context.lineWidth = 3
+    context.strokeStyle = '#606060'
+    context.beginPath()
+    context.moveTo(lowerCenter.x, lowerCenter.y)
+    context.lineTo(upperCenter.x, upperCenter.y)
+    context.stroke()
+    context.setLineDash([])
+    const blob = await canvasToBlob(canvas, 'image/png')
+    if (!blob || blob.size <= 0) return null
+    return new File([blob], 'merge-angle02-position-board.png', { type: 'image/png' })
+  }
+
   async function buildAngle05ShoePositionBoard(productReferences: Array<{ image: File; name: string }>) {
     if (productReferences.length === 0) return null
     const canvas = document.createElement('canvas')
@@ -5234,6 +5298,9 @@ function App() {
         const angle01PositionBoardFile = angleItem.id === 'angle-01'
           ? await buildAngle01ShoePositionBoard(angleProductFiles)
           : null
+        const angle02PositionBoardFile = angleItem.id === 'angle-02'
+          ? await buildAngle02ShoePositionBoard(angleProductFiles)
+          : null
         const angle05PositionBoardFile = angleItem.id === 'angle-05'
           ? await buildAngle05ShoePositionBoard(angleProductFiles)
           : null
@@ -5290,6 +5357,9 @@ function App() {
           angleItem.id === 'angle-01' && angle01PositionBoardFile
             ? 'ANGLE-01 HIDDEN OUTLINE POSITION BOARD: a hidden pure coordinate/outline board is included for angle-01. It contains only neutral target boxes, center marks, and a nearest-gap line; it contains no product shoe photo and no product design. Use it only to match the two-shoe spacing from the current angle-01 reference: upper/right worn shoe target box about left 36.1%, top 17.6%, width 49.4%, height 41.5%; lower-left hand-supported shoe target box about left 11.0%, top 34.9%, width 55.6%, height 43.0%; center delta about X22.0% / Y18.0%; nearest yellow-to-yellow boundary gap about 4.94% of canvas width / 3.70% of canvas height. Product reference 1 corresponds to the upper/right worn shoe; product reference 2 corresponds to the lower-left hand-supported shoe. The board controls placement distance, target bounding areas, center points, and equal product prominence only; do not copy the board white background, gray/black outlines, center marks, dashed line, flat layout style, lighting, haze, fog, overlay, or any visual guide mark into the final image.'
             : '',
+          angleItem.id === 'angle-02' && angle02PositionBoardFile
+            ? 'ANGLE-02 HIDDEN OUTLINE POSITION BOARD: a hidden pure coordinate/outline board is included for angle-02. It contains only neutral target boxes, center marks, and the measured center-distance line; it contains no product shoe photo and no product design. Use it only to lock the two standalone display shoes into the fixed lower-left/front OUTER-SIDE and upper-right/back INNER-SIDE target areas. Match the board target boxes, center delta, diagonal relationship, overlap, and tight spacing exactly. The board controls placement distance, scale envelope, target bounding areas, center points, and compact overlap only; do not copy the board white background, gray/black outlines, center marks, dashed line, flat layout style, lighting, haze, fog, overlay, or any visual guide mark into the final image.'
+            : '',
           angleItem.uploadedFile ? '' : fixedSingleFootReferenceLock,
           angleItem.uploadedFile ? '' : angle06ReferenceLock,
           angleItem.uploadedFile ? '' : angle06YellowEdgeDistanceLock,
@@ -5335,6 +5405,9 @@ function App() {
         }
         if (angle01PositionBoardFile) {
           generateForm.append('images', angle01PositionBoardFile, angle01PositionBoardFile.name)
+        }
+        if (angle02PositionBoardFile) {
+          generateForm.append('images', angle02PositionBoardFile, angle02PositionBoardFile.name)
         }
         generateForm.append('images', await compressMergeReferenceFile(angleFile, 'angle'), `merge-angle-${angleFile.name}`)
         const generateResponse = await fetch('/api/run/merge-image-generate', {
