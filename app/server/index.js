@@ -315,11 +315,12 @@ function buildProductReferenceAssignmentHardInstruction({ productReferenceCount 
   if (/angle-06|角度\s*6/i.test(String(angleSource || ''))) {
     return [
       ...base,
-      `ANGLE-06 EXACT PRODUCT ASSIGNMENT: angle-06 must show exactly two hand-held display shoes. ${image1} / product reference 1 controls one visible hand-held shoe, and ${image2} / product reference 2 controls the other visible hand-held shoe.`,
+      `ANGLE-06 EXACT PRODUCT ASSIGNMENT: angle-06 must show exactly two hand-held display shoes. ${image1} / product reference 1 controls the FRONT-SIDE lower-left/nearer shoe, and ${image2} / product reference 2 controls the BACK-SIDE upper-right/farther shoe.`,
+      buildAngle06FrontBackAssignmentInstruction({ productReferenceCount, productImageStartIndex }),
       'If product reference 1 and product reference 2 have different colors, styles, materials, silhouettes, soles, straps, buckles, laces, stitching, or details, the final angle-06 image must keep those differences clearly visible.',
       'Do not duplicate product reference 1 onto both shoes. Do not recolor product reference 2 to match product reference 1. Do not blend or average the two references into a hybrid pair. Do not make both visible shoes the same color unless both uploaded product references are actually the same.',
       'Both assigned shoes must remain hand-held display shoes in the angle-06 pose, with the same yellow-region placement, canvas edge-distance anchors, direction, scale, and near-camera visual weight. Product assignment must not change shoe count, hand-held role, body crop, or pose.',
-      'Final visible check before output: if two uploaded product references are different but the two final hand-held shoes look the same, the result is wrong.',
+      'Final visible check before output: if two uploaded product references are different but the front-side lower-left/nearer shoe and back-side upper-right/farther shoe look the same, or if product reference 2 is missing from the back-side shoe, the result is wrong.',
     ].join('\n')
   }
   return [
@@ -342,7 +343,7 @@ function buildMultiProductFinalColorValidationInstruction({ productReferenceCoun
   } else if (/angle-05|角度\s*5/i.test(sourceText)) {
     roleLine = `For angle-05: ${image1} / product reference 1 controls the lower-left worn shoe; ${image2} / product reference 2 controls the upper-right hand-held shoe.`
   } else if (/angle-06|角度\s*6/i.test(sourceText)) {
-    roleLine = `For angle-06: ${image1} / product reference 1 controls one hand-held display shoe; ${image2} / product reference 2 controls the other hand-held display shoe.`
+    roleLine = `For angle-06: ${image1} / product reference 1 controls ONLY the FRONT-SIDE lower-left/nearer hand-held display shoe; ${image2} / product reference 2 controls ONLY the BACK-SIDE upper-right/farther hand-held display shoe.`
   }
   return [
     '[FINAL TWO-PRODUCT COLOR VISIBILITY VALIDATION - HIGHEST PRIORITY]',
@@ -754,6 +755,23 @@ function buildAngle02YellowDistanceLockInstruction() {
   ].join('\n')
 }
 
+function buildAngle06FrontBackAssignmentInstruction({ productReferenceCount = 0, productImageStartIndex = 3 } = {}) {
+  const image1 = `image ${productImageStartIndex}`
+  const image2 = `image ${productImageStartIndex + 1}`
+  const productAssignment = productReferenceCount > 1
+    ? `[MUST] Angle-06 front/back product assignment is fixed: ${image1} / product reference 1 controls ONLY the FRONT-SIDE lower-left/nearer shoe; ${image2} / product reference 2 controls ONLY the BACK-SIDE upper-right/farther shoe.`
+    : '[MUST] Angle-06 receives one product shoe reference, so both the front-side lower-left/nearer shoe and the back-side upper-right/farther shoe use that same uploaded product identity.'
+  return [
+    '[ANGLE-06 FRONT / BACK PRODUCT ASSIGNMENT LOCK]',
+    '[MUST] According to the blue Chinese labels in the angle-06 reference, the lower-left shoe closer to the camera is the FRONT-SIDE shoe, and the upper-right shoe farther behind it is the BACK-SIDE shoe.',
+    productAssignment,
+    '[MUST] This rule controls product identity assignment only. It must not change the existing angle-06 yellow-region placement, canvas edge-distance anchors, shoe size, shoe direction, hand-held relationship, near/far depth, or spacing rules.',
+    '[MUST] If two uploaded product references differ in color, material, silhouette, sole, straps, laces, buckles, stitching, logo, or details, product reference 1 must remain visibly on the front-side lower-left/nearer shoe, and product reference 2 must remain visibly on the back-side upper-right/farther shoe.',
+    '[MUST NOT] Do not swap front/back assignments. Do not place product reference 2 on the front-side lower-left/nearer shoe. Do not place product reference 1 on the back-side upper-right/farther shoe when two product references are uploaded.',
+    '[FAIL CONDITION] If the back-side upper-right/farther shoe does not show product reference 2 when two references are uploaded, or if both shoes become one same colorway despite different uploads, the result is wrong.',
+  ].join('\n')
+}
+
 function isAngle05LibraryRequest(angleSource = '') {
   return /angle-05|角度\s*5/i.test(String(angleSource || ''))
 }
@@ -826,13 +844,14 @@ function buildAngle05FinalInstruction({ angleSource = '', productReferenceCount 
   ].join('\n')
 }
 
-function buildAngle06PromptOnlyFinalInstruction({ angleSource = '' } = {}) {
+function buildAngle06PromptOnlyFinalInstruction({ angleSource = '', productReferenceCount = 0, productImageStartIndex = 3 } = {}) {
   if (!isAngle06PromptOnlyRequest({ angleSource })) return ''
   return [
     '[ANGLE-06 PROMPT-ONLY FINAL LOCK]',
     '[MUST] For angle-06, do not use code-generated angle recognition, cleaned-control schema, S/B/R object counts, worn-shoe counts, blue-hand counts, blue-foot counts, hand/foot candidate maps, skeleton maps, or automatic yellow/blue/red/black role classification.',
     '[MUST] The selected pose prompt is the highest authority for pose, shoe count, hand relationship, body crop, body structure, shoe direction, shoe spacing, and display action.',
     '[MUST] Generate exactly the angle-06 prompt intent: two product shoes held toward the camera by natural hands. Do not turn either shoe into a worn shoe, do not put feet inside the shoes, do not create a try-on/on-foot scene, and do not create extra display shoes.',
+    buildAngle06FrontBackAssignmentInstruction({ productReferenceCount, productImageStartIndex }),
     '[MUST] Human anatomy must follow normal logic: natural torso crop, natural arms/wrists/hands, correct finger count, no twisted limbs, no duplicated feet, no extra legs, no broken joints, no body parts passing through shoes.',
     '[MUST] Use the original angle-06 reference only as a rough visual composition aid. If any automatic color-region interpretation conflicts with the selected pose prompt, ignore the automatic interpretation and follow the selected pose prompt.',
   ].join('\n')
@@ -4893,7 +4912,11 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
       productReferenceCount,
       productImageStartIndex,
     })
-    const angle06PromptOnlyFinalInstruction = buildAngle06PromptOnlyFinalInstruction({ angleSource })
+    const angle06PromptOnlyFinalInstruction = buildAngle06PromptOnlyFinalInstruction({
+      angleSource,
+      productReferenceCount,
+      productImageStartIndex,
+    })
     const multiProductFinalColorValidationInstruction = buildMultiProductFinalColorValidationInstruction({
       productReferenceCount,
       angleSource,
@@ -4909,6 +4932,7 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
           hasModelReference
             ? `Use image 1 original angle-06 reference only as a rough visual composition aid for close-up framing and shoe visual weight. Use image 2 background for the uploaded environment. Use image 3 model reference only for outfit/body styling. Use ${productReferenceUseText} from image 4 and later for shoe identity.`
             : `Use image 1 original angle-06 reference only as a rough visual composition aid for close-up framing and shoe visual weight. Use image 2 background for the uploaded environment. Use ${productReferenceUseText} from image 3 and later for shoe identity.`,
+          buildAngle06FrontBackAssignmentInstruction({ productReferenceCount, productImageStartIndex }),
           'Do not parse the original angle-06 reference as a code mask. Do not infer S/B/R object counts, worn shoe counts, blue hand counts, blue foot counts, skeleton maps, or automatic hand/foot bindings from it.',
           `Use ${productReferenceUseText} as the only source of shoe design, material, color, straps, buckle, toe, heel, sole, stitching, lining, and proportions.`,
           'Use the background reference as the only source of environment objects, perspective, crop, visible elements, and light direction. Do not copy model-reference background.',
