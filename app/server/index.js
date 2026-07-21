@@ -316,11 +316,14 @@ function buildProductReferenceAssignmentHardInstruction({ productReferenceCount 
     return [
       ...base,
       `ANGLE-06 EXACT PRODUCT ASSIGNMENT: angle-06 must show exactly two hand-held display shoes. ${image1} / product reference 1 controls the FRONT-SIDE lower-left/nearer shoe, and ${image2} / product reference 2 controls the BACK-SIDE upper-right/farther shoe.`,
+      buildAngle06SittingNoFurnitureInstruction(),
       buildAngle06FrontBackAssignmentInstruction({ productReferenceCount, productImageStartIndex }),
+      buildAngle06EqualSharpnessInstruction(),
+      buildAngle06ToeTowardCameraInstruction(),
       'If product reference 1 and product reference 2 have different colors, styles, materials, silhouettes, soles, straps, buckles, laces, stitching, or details, the final angle-06 image must keep those differences clearly visible.',
       'Do not duplicate product reference 1 onto both shoes. Do not recolor product reference 2 to match product reference 1. Do not blend or average the two references into a hybrid pair. Do not make both visible shoes the same color unless both uploaded product references are actually the same.',
-      'Both assigned shoes must remain hand-held display shoes in the angle-06 pose, with the same yellow-region placement, canvas edge-distance anchors, direction, scale, and near-camera visual weight. Product assignment must not change shoe count, hand-held role, body crop, or pose.',
-      'Final visible check before output: if two uploaded product references are different but the front-side lower-left/nearer shoe and back-side upper-right/farther shoe look the same, or if product reference 2 is missing from the back-side shoe, the result is wrong.',
+      'Both assigned shoes must remain hand-held display shoes in the angle-06 pose, with the same yellow-region placement, canvas edge-distance anchors, direction, scale, near-camera visual weight, and product-detail clarity. Product assignment must not change shoe count, hand-held role, body crop, or pose.',
+      'Final visible check before output: if two uploaded product references are different but the front-side lower-left/nearer shoe and back-side upper-right/farther shoe look the same, if product reference 2 is missing from the back-side shoe, or if the back-side shoe is visibly blurrier/softer/lower-detail than the front-side shoe, the result is wrong.',
     ].join('\n')
   }
   return [
@@ -772,6 +775,40 @@ function buildAngle06FrontBackAssignmentInstruction({ productReferenceCount = 0,
   ].join('\n')
 }
 
+function buildAngle06EqualSharpnessInstruction() {
+  return [
+    '[ANGLE-06 EQUAL TWO-SHOE SHARPNESS LOCK]',
+    '[MUST] The front-side lower-left/nearer shoe and the back-side upper-right/farther shoe must be equally sharp, equally detailed, and equally important as product heroes.',
+    '[MUST] The back-side shoe may remain behind the front-side shoe in the staggered angle-06 composition, but it must not be depth-of-field blurred, soft, defocused, hazy, low-detail, low-contrast, visually secondary, or treated like a background prop.',
+    '[MUST] Keep both shoes in the same commercial product-photography clarity: crisp outsole edges, clear shoe upper details, visible laces/buckles/straps, stitching, material texture, logo/details, accurate color, and clean contour definition.',
+    '[MUST] Use deep focus or a focus plane that keeps both product shoes sharp at the same time. Depth layering may show front/back position through overlap and scale only, never by blurring or reducing product detail on the back-side shoe.',
+    '[FAIL CONDITION] If the back-side upper-right/farther shoe is visibly blurrier, softer, less detailed, duller, or less readable than the front-side lower-left/nearer shoe, the result is wrong.',
+  ].join('\n')
+}
+
+function buildAngle06ToeTowardCameraInstruction() {
+  return [
+    '[ANGLE-06 TOE-TOWARD-CAMERA LOCK]',
+    '[MUST] Show both shoes as close hand-held display shoes. The toe/front ends point toward the front of the frame and slightly downward, with the toe/front closer to the camera and the heels closer to the model body.',
+    '[MUST] Use a three-quarter front high-angle perspective: the viewer can see the toe-front surface, shoe upper, lace area, inner shoe opening, and part of the side thickness at the same time.',
+    '[MUST] The pair should visually extend from upper-left heel direction to lower-right toe direction, with obvious toe-toward-camera perspective, slightly larger front ends, and slightly farther heels while keeping a natural hand-held display angle.',
+    '[MUST] Keep the existing angle-06 yellow-region distance, canvas edge-distance anchors, front/back assignment, shoe size, hand-held relationship, near/far depth, and equal sharpness. Adjust only the toe/front orientation and near-camera perspective.',
+    '[MUST NOT] Do not render a pure side view, a completely flat top-down layout, or a shoe angle where the toe/front turns away from the camera. Do not rotate the shoes so far that they break the hand-held pose.',
+    '[FAIL CONDITION] If the two shoes read as mostly side-view, fully flat top-down, or toe-away-from-camera instead of close hand-held three-quarter front high-angle shoes, the result is wrong.',
+  ].join('\n')
+}
+
+function buildAngle06SittingNoFurnitureInstruction() {
+  return [
+    '[ANGLE-06 SITTING POSE WITHOUT FURNITURE LOCK]',
+    '[MUST] The model only needs to simulate a seated or side-seated body relationship, with the body cropped on the left side and hands presenting both shoes toward the camera.',
+    '[MUST] Express the seated pose through body lean, clothing folds, arm position, and a small partial leg area only.',
+    '[MUST] The final environment must come only from the uploaded background image. Do not add furniture or props just to explain the sitting pose.',
+    '[MUST NOT] Do not generate any specific chair, sofa, stool, seat, backrest, armrest, cushion, bench, or seating furniture unless that exact object already exists in the uploaded background image.',
+    '[FAIL CONDITION] If a new chair, sofa, stool, seat, cushion, or backrest appears only because of the sitting pose instruction, the result is wrong.',
+  ].join('\n')
+}
+
 function isAngle05LibraryRequest(angleSource = '') {
   return /angle-05|角度\s*5/i.test(String(angleSource || ''))
 }
@@ -851,7 +888,10 @@ function buildAngle06PromptOnlyFinalInstruction({ angleSource = '', productRefer
     '[MUST] For angle-06, do not use code-generated angle recognition, cleaned-control schema, S/B/R object counts, worn-shoe counts, blue-hand counts, blue-foot counts, hand/foot candidate maps, skeleton maps, or automatic yellow/blue/red/black role classification.',
     '[MUST] The selected pose prompt is the highest authority for pose, shoe count, hand relationship, body crop, body structure, shoe direction, shoe spacing, and display action.',
     '[MUST] Generate exactly the angle-06 prompt intent: two product shoes held toward the camera by natural hands. Do not turn either shoe into a worn shoe, do not put feet inside the shoes, do not create a try-on/on-foot scene, and do not create extra display shoes.',
+    buildAngle06SittingNoFurnitureInstruction(),
     buildAngle06FrontBackAssignmentInstruction({ productReferenceCount, productImageStartIndex }),
+    buildAngle06EqualSharpnessInstruction(),
+    buildAngle06ToeTowardCameraInstruction(),
     '[MUST] Human anatomy must follow normal logic: natural torso crop, natural arms/wrists/hands, correct finger count, no twisted limbs, no duplicated feet, no extra legs, no broken joints, no body parts passing through shoes.',
     '[MUST] Use the original angle-06 reference only as a rough visual composition aid. If any automatic color-region interpretation conflicts with the selected pose prompt, ignore the automatic interpretation and follow the selected pose prompt.',
   ].join('\n')
@@ -4932,7 +4972,10 @@ app.post('/api/run/merge-image-generate', upload.array('images'), async (req, re
           hasModelReference
             ? `Use image 1 original angle-06 reference only as a rough visual composition aid for close-up framing and shoe visual weight. Use image 2 background for the uploaded environment. Use image 3 model reference only for outfit/body styling. Use ${productReferenceUseText} from image 4 and later for shoe identity.`
             : `Use image 1 original angle-06 reference only as a rough visual composition aid for close-up framing and shoe visual weight. Use image 2 background for the uploaded environment. Use ${productReferenceUseText} from image 3 and later for shoe identity.`,
+          buildAngle06SittingNoFurnitureInstruction(),
           buildAngle06FrontBackAssignmentInstruction({ productReferenceCount, productImageStartIndex }),
+          buildAngle06EqualSharpnessInstruction(),
+          buildAngle06ToeTowardCameraInstruction(),
           'Do not parse the original angle-06 reference as a code mask. Do not infer S/B/R object counts, worn shoe counts, blue hand counts, blue foot counts, skeleton maps, or automatic hand/foot bindings from it.',
           `Use ${productReferenceUseText} as the only source of shoe design, material, color, straps, buckle, toe, heel, sole, stitching, lining, and proportions.`,
           'Use the background reference as the only source of environment objects, perspective, crop, visible elements, and light direction. Do not copy model-reference background.',
